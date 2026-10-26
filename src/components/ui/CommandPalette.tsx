@@ -3,7 +3,7 @@
 import type { ReactNode, ChangeEvent, KeyboardEvent } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { cn } from '@/libs/utils';
+import { cn, matchesQuery } from '@/libs/utils';
 
 export interface CommandItem {
   key: string;
@@ -67,7 +67,7 @@ export function CommandPalette({
 
   const filtered =
     !disableFilter && query.trim()
-      ? allItems.filter((item) => item.label.toLowerCase().includes(query.toLowerCase()))
+      ? allItems.filter((item) => matchesQuery(item.label, query))
       : allItems;
 
   const filteredGroups: CommandGroup[] =

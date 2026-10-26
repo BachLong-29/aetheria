@@ -7,6 +7,7 @@ import { expandEvents } from '@/server/services/event-expand';
 import { applyEventOverride } from '@/server/services/event-override';
 import type { AgentTarget } from '@/types/agent';
 import type { EventRecurrence } from '@/types/event';
+import { diacriticRegex, matchesQuery } from '@/libs/utils';
 
 /**
  * Event tools for the assistant. Same contract as the task and habit tools:
@@ -186,10 +187,6 @@ function findEvent(id: string, userId: string) {
   }).catch(() => null);
 }
 
-function escapeRegex(text: string): string {
-  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
 /** `weekly mon,wed every 2 weeks` — short enough for a confirm card or a list. */
 function describeRule(rule?: RuleLike | null): string {
   if (!rule) return 'one-off';
@@ -285,10 +282,9 @@ export async function runEventReadTool(
     const span = (new Date(end).getTime() - new Date(start).getTime()) / DAY_MS;
     if (span > MAX_RANGE_DAYS) return { error: `Ask for at most ${MAX_RANGE_DAYS} days at once.` };
 
-    const needle = q?.toLowerCase();
     const occurrences = await expandEvents(userId, start, end);
     return occurrences
-      .filter((o) => !needle || o.title.toLowerCase().includes(needle))
+      .filter((o) => matchesQuery(o.title, q ?? ''))
       .map((o) => ({
         // A moved occurrence is its own row; the series is what later edits address.
         eventId: o.isOverride ? o.seriesId : o.eventId,
@@ -304,7 +300,7 @@ export async function runEventReadTool(
   }
 
   const filter: Record<string, unknown> = { userId, active: true, seriesRef: { $exists: false } };
-  if (q) filter.title = { $regex: escapeRegex(q), $options: 'i' };
+  if (q) filter.title = { $regex: diacriticRegex(q), $options: 'i' };
   const events = await EventModel.find(filter).sort({ startDate: 1 }).limit(50);
   return events.map(ruleBrief);
 }

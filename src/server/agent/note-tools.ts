@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { NoteModel } from '@/server/models/note.model';
 import type { INote } from '@/server/models/note.model';
 import type { AgentTarget } from '@/types/agent';
+import { diacriticRegex } from '@/libs/utils';
 
 /**
  * Quick-note tools for the assistant: read the notes, and capture a new one.
@@ -66,10 +67,6 @@ function brief(note: INote) {
   };
 }
 
-function escapeRegex(text: string): string {
-  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
 export async function runNoteReadTool(
   name: NoteReadToolName,
   rawArgs: unknown,
@@ -84,7 +81,7 @@ export async function runNoteReadTool(
   const status = args.status ?? 'open';
   if (status === 'open') filter.archivedAt = { $exists: false };
   if (status === 'done') filter.archivedAt = { $exists: true };
-  if (args.q) filter.content = { $regex: escapeRegex(args.q), $options: 'i' };
+  if (args.q) filter.content = { $regex: diacriticRegex(args.q), $options: 'i' };
 
   const notes = await NoteModel.find(filter)
     .sort({ createdAt: -1 })

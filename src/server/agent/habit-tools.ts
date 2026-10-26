@@ -5,6 +5,7 @@ import { HabitModel } from '@/server/models/habit.model';
 import { HabitLogModel } from '@/server/models/habit-log.model';
 import type { IHabit } from '@/server/models/habit.model';
 import type { AgentTarget } from '@/types/agent';
+import { diacriticRegex } from '@/libs/utils';
 
 /**
  * Habit tools for the assistant. Same contract as the task tools in `tools.ts`:
@@ -141,10 +142,6 @@ function brief(habit: IHabit) {
   };
 }
 
-function escapeRegex(text: string): string {
-  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
 /** A category of the caller's: the named one, else their first. */
 async function pickCategory(userId: string, tagId?: string) {
   const categories = await CategoryModel.find({ userId }).sort({ createdAt: 1 });
@@ -162,7 +159,7 @@ export async function runHabitReadTool(
   const args = parsed.data;
   const filter: Record<string, unknown> = { userId };
   if (args.includeInactive === false) filter.active = true;
-  if (args.q) filter.name = { $regex: escapeRegex(args.q), $options: 'i' };
+  if (args.q) filter.name = { $regex: diacriticRegex(args.q), $options: 'i' };
   const habits = await HabitModel.find(filter).sort({ createdAt: 1 }).limit(50);
   return habits.map(brief);
 }

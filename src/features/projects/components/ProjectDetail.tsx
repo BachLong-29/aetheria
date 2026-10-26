@@ -16,7 +16,7 @@ import { taskToUITask } from '@/features/tasks/data/adapters';
 import type { Character } from '@/features/dashboard/types';
 import { Link } from '@/i18n/navigation';
 import { useUIStore } from '@/stores/ui.store';
-import { cn } from '@/libs/utils';
+import { cn, matchesQuery } from '@/libs/utils';
 import type { Task, TaskStatus, UpdateTaskPayload } from '@/types';
 
 import { COLOR_CSS } from '../constants';
@@ -75,8 +75,7 @@ export function ProjectDetail({ id }: { id: string }) {
     return tasks.filter((t) => {
       if (filterTag !== 'all' && t.tagId !== filterTag) return false;
       if (search) {
-        const s = search.toLowerCase();
-        if (!t.name.toLowerCase().includes(s) && !(t.note?.toLowerCase().includes(s) ?? false)) {
+        if (!matchesQuery(t.name, search) && !(t.note ? matchesQuery(t.note, search) : false)) {
           return false;
         }
       }

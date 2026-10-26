@@ -14,6 +14,7 @@ import { useUIStore } from '@/stores/ui.store';
 import type { GlobalSearchResult, SearchHit, UpdateTaskPayload } from '@/types';
 
 import { useGlobalSearch } from '../hooks/useGlobalSearch';
+import { matchesQuery } from '@/libs/utils';
 
 const GROUP_KEYS: (keyof GlobalSearchResult)[] = ['tasks', 'habits', 'quests', 'projects'];
 
@@ -142,14 +143,10 @@ export function GlobalSearch() {
       })),
     })).filter((g) => g.items.length > 0);
 
-    const q = debounced.trim().toLowerCase();
+    const q = debounced.trim();
     const pageItems = q
       ? pages
-          .filter(
-            (p) =>
-              p.label.toLowerCase().includes(q) ||
-              p.keywords?.some((k) => k.toLowerCase().includes(q)),
-          )
+          .filter((p) => matchesQuery(p.label, q) || p.keywords?.some((k) => matchesQuery(k, q)))
           .map((p) => ({
             key: `page:${p.href}`,
             icon: p.icon,

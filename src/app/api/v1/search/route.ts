@@ -10,16 +10,12 @@ import { ProjectModel } from '@/server/models/project.model';
 import { asyncHandler, successResponse, unauthorizedResponse } from '@/server';
 import { validateSearchParams } from '@/server/validate';
 import type { GlobalSearchResult, SearchHit } from '@/types/search';
+import { diacriticRegex } from '@/libs/utils';
 
 const querySchema = z.object({
   q: z.string().trim().min(1, 'Search query is required'),
   limit: z.coerce.number().int().min(1).max(10).optional(),
 });
-
-/** Escape user input so it is treated as a literal in a MongoDB $regex. */
-function escapeRegex(input: string): string {
-  return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
 
 // Quest documents have no icon — fall back to a glyph per quest type.
 const QUEST_TYPE_ICON: Record<string, string> = {
@@ -43,7 +39,7 @@ export const GET = asyncHandler(async (req: NextRequest) => {
   await connectDB();
 
   const limit = query?.limit ?? 5;
-  const rx = { $regex: escapeRegex(query?.q ?? ''), $options: 'i' };
+  const rx = { $regex: diacriticRegex(query?.q ?? ''), $options: 'i' };
   const userId = user.sub;
 
   const [tasks, habits, quests, projects] = await Promise.all([

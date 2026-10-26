@@ -1,3 +1,4 @@
+import { fold } from '@/libs/utils';
 import type { FinanceCategory, TransactionType, Wallet } from '@/types';
 
 export interface QuickEntryDraft {
@@ -6,11 +7,6 @@ export interface QuickEntryDraft {
   walletId?: string;
   categoryId?: string;
   note: string;
-}
-
-/** Strips Vietnamese diacritics so "ăn trưa" matches a category named "Ăn uống". */
-function normalize(text: string): string {
-  return text.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[đĐ]/g, 'd').toLowerCase();
 }
 
 /** Splits normalized text into comparable word tokens. */
@@ -45,7 +41,7 @@ export function parseQuickEntry(
   const raw = input.trim();
   if (!raw) return null;
 
-  const normalized = normalize(raw);
+  const normalized = fold(raw);
   const match = AMOUNT_RE.exec(normalized);
   if (!match) return null;
 
@@ -64,7 +60,7 @@ export function parseQuickEntry(
   // Match on whole words, not substrings — "an" as a token shouldn't fire inside "thanh".
   const restWords = new Set(tokenize(rest));
   const mentions = (name: string) => {
-    const nameWords = tokenize(normalize(name));
+    const nameWords = tokenize(fold(name));
     if (nameWords.length === 0) return false;
     return (
       nameWords.every((w) => restWords.has(w)) ||
@@ -73,8 +69,7 @@ export function parseQuickEntry(
   };
 
   const wallet =
-    wallets.find((w) => rest.includes(`@${normalize(w.name)}`)) ??
-    wallets.find((w) => mentions(w.name));
+    wallets.find((w) => rest.includes(`@${fold(w.name)}`)) ?? wallets.find((w) => mentions(w.name));
 
   const category = categories.filter((c) => c.type === type).find((c) => mentions(c.name));
 

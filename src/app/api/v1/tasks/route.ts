@@ -11,6 +11,7 @@ import { validateBody, validateSearchParams } from '@/server/validate';
 import type { Task } from '@/types/task';
 import type { PaginationMeta } from '@/types/api';
 import type { ITask } from '@/server/models/task.model';
+import { diacriticRegex } from '@/libs/utils';
 
 const TASK_COLORS = ['gold', 'mint', 'violet', 'cyan', 'rose', 'amber', 'blue'] as const;
 
@@ -144,7 +145,7 @@ export const GET = asyncHandler(async (req: NextRequest) => {
   // Combinable with q/tagId/start/end. Legacy callers that never send `offset`
   // fall through to the unpaginated modes below, completely unaffected.
   if (query?.offset !== undefined) {
-    if (query?.q) filter.name = { $regex: query.q, $options: 'i' };
+    if (query?.q) filter.name = { $regex: diacriticRegex(query.q), $options: 'i' };
     if (query?.tagId) filter.tagId = query.tagId;
     const dateOr = buildDateOrFilter(query?.start, query?.end);
     if (dateOr) filter.$or = dateOr;
@@ -183,7 +184,7 @@ export const GET = asyncHandler(async (req: NextRequest) => {
 
   if (isSearchMode) {
     if (query?.q) {
-      filter.name = { $regex: query.q, $options: 'i' };
+      filter.name = { $regex: diacriticRegex(query.q), $options: 'i' };
     }
     const tasks = await TaskModel.find(filter)
       .sort({ createdAt: -1 })

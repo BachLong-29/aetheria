@@ -17,6 +17,7 @@ import {
 import { validateBody } from '@/server/validate';
 import type { ITransaction } from '@/server/models/transaction.model';
 import type { Transaction } from '@/types/finance';
+import { diacriticRegex } from '@/libs/utils';
 
 const TRANSACTION_TYPES = ['income', 'expense'] as const;
 
@@ -82,7 +83,7 @@ export const GET = asyncHandler(async (req: NextRequest) => {
   if (walletId) filter.walletId = walletId;
   if (categoryId) filter.categoryId = categoryId;
   if (type) filter.type = type;
-  if (search) filter.note = { $regex: search, $options: 'i' };
+  if (search) filter.note = { $regex: diacriticRegex(search), $options: 'i' };
 
   if (from || to) {
     const dateFilter: Record<string, Date> = {};

@@ -45,6 +45,7 @@ import {
   type PlanReadToolName,
   type PlanWriteToolName,
 } from './plan-tools';
+import { diacriticRegex } from '@/libs/utils';
 
 const ymd = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD');
 
@@ -356,10 +357,6 @@ function brief(task: ITask) {
   };
 }
 
-function escapeRegex(text: string): string {
-  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
 /** Runs a read tool for `userId`. Bad arguments come back as an error object for the model. */
 export async function runReadTool(
   name: ReadToolName,
@@ -389,7 +386,7 @@ export async function runReadTool(
 
   const args = parsed.data as z.infer<typeof listTasksArgs>;
   const filter: Record<string, unknown> = { userId, active: true };
-  if (args.q) filter.name = { $regex: escapeRegex(args.q), $options: 'i' };
+  if (args.q) filter.name = { $regex: diacriticRegex(args.q), $options: 'i' };
   // A task belongs to the range if any of its days fall in it — a multi-day
   // task that began last week is still on this week's list.
   if (args.end) {

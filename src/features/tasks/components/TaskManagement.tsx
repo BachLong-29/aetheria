@@ -24,6 +24,7 @@ import { questToUITask, parseDateLocal, taskToUITask, type QuestLike } from '../
 import { PageHeader, type ViewMode } from './PageHeader';
 import { TaskDayView } from './day/TaskDayView';
 import { TaskAllView } from './all/TaskAllView';
+import { matchesQuery } from '@/libs/utils';
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -143,12 +144,11 @@ export function TaskManagement({ initialSearch = '' }: { initialSearch?: string 
         if (filterCat !== 'all' && t.tagId !== filterCat) return false;
         if (filterDiff !== 'all' && t.diff !== filterDiff) return false;
         if (search) {
-          const s = search.toLowerCase();
           if (
-            !t.title.toLowerCase().includes(s) &&
-            !t.desc.toLowerCase().includes(s) &&
-            !(t.projectName?.toLowerCase().includes(s) ?? false) &&
-            !t.tags.some((x) => x.toLowerCase().includes(s))
+            !matchesQuery(t.title, search) &&
+            !matchesQuery(t.desc, search) &&
+            !(t.projectName ? matchesQuery(t.projectName, search) : false) &&
+            !t.tags.some((x) => matchesQuery(x, search))
           )
             return false;
         }

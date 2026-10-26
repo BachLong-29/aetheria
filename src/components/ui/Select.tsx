@@ -13,7 +13,7 @@ import {
 import { createPortal } from 'react-dom';
 import { useTranslations } from 'next-intl';
 
-import { cn } from '@/libs/utils';
+import { cn, matchesQuery } from '@/libs/utils';
 
 export interface SelectOption {
   value: string;
@@ -104,9 +104,9 @@ export function Select({
   const currentValue = isControlled ? value : internalValue;
   const selectedOption = options.find((option) => option.value === currentValue);
   const visibleOptions = useMemo(() => {
-    const needle = query.trim().toLowerCase();
+    const needle = query.trim();
     const matched = needle
-      ? options.filter((option) => optionText(option).toLowerCase().includes(needle))
+      ? options.filter((option) => matchesQuery(optionText(option), needle))
       : options;
 
     if (!selectedFirst) return matched;
