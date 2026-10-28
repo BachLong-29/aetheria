@@ -10,23 +10,24 @@ import { Pagination } from '@/components/ui/Pagination';
 import DashboardTopbar from '@/features/dashboard/components/layout/DashboardTopbar';
 import type { Character } from '@/features/dashboard/types';
 import { buildEmptyChar, profileToCharacter } from '@/features/dashboard/utils/character.utils';
+import { useRewards } from '@/features/rewards/hooks/useRewards';
 import { useProfile } from '@/features/profile/hooks/useProfile';
 import { Link } from '@/i18n/navigation';
 import { cn } from '@/libs/utils';
 
 import { REWARD_DATA } from '../data/mock';
-import { MARKET_CATEGORIES, RARITY_COLOR } from '../constants';
+import { MARKET_RARITY_FILTERS, RARITY_COLOR, RARITY_LABEL } from '../constants';
+import { useRedeemReward } from '../hooks/useRedeemReward';
 import type {
   MarketPlayerState,
   MarketReward,
-  MarketRewardCategoryKey,
+  MarketRarityFilter,
   MarketBattlePassNode as MarketBattlePassNodeData,
-  MarketFeaturedReward,
 } from '../types';
+import { toMarketReward } from '../utils/to-market-reward';
 import { MarketRewardCard } from './MarketRewardCard';
 import { MarketRewardDetailModal } from './MarketRewardDetailModal';
 import { MarketBattlePassNode } from './MarketBattlePassNode';
-import { MarketFeaturedBanner } from './MarketFeaturedBanner';
 
 const REWARDS_PAGE_SIZE = 12;
 
@@ -49,27 +50,50 @@ export function MarketPlace() {
     day: 'numeric',
   });
 
-  const [activeCat, setActiveCat] = useState<MarketRewardCategoryKey>('all');
-  const [selected, setSelected] = useState<MarketReward | null>(null);
-  const [player, setPlayer] = useState<MarketPlayerState>(() => ({
-    ...(REWARD_DATA.player as Omit<MarketPlayerState, 'achievement'>),
-    achievement: 0,
-  }));
-  const [rewards, setRewards] = useState<MarketReward[]>(
-    () => REWARD_DATA.rewards as MarketReward[],
-  );
+  const [activeCat, setActiveCat] = useState<MarketRarityFilter>('all');
+  // Held by id so the open modal tracks the live reward (stock drops after a redeem).
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [flashColor, setFlashColor] = useState<string | null>(null);
 
-  // Only 3 tabs are shown (all / real-world / in-game) — "in-game" buckets every reward whose
-  // category isn't 'real', regardless of its more granular cat (cosmetic/game/booster/quest).
-  const filtered = useMemo(() => {
-    if (activeCat === 'all') return rewards;
-    if (activeCat === 'game') return rewards.filter((r) => r.cat !== 'real');
-    return rewards.filter((r) => r.cat === activeCat);
-  }, [activeCat, rewards]);
+  // The storefront sells the user's own rewards; the shop hides the ones switched off.
+  const {
+    data: rewardData,
+    isPending: rewardsPending,
+    isError: rewardsFailed,
+  } = useRewards({
+    limit: 100,
+  });
+  const { mutate: redeem, isPending: redeeming } = useRedeemReward();
 
-  // Client-side pagination over the (mock) reward catalog.
+  const player = useMemo<MarketPlayerState>(
+    () => ({
+      ...(REWARD_DATA.player as Omit<MarketPlayerState, 'achievement'>),
+      level: char.level,
+      rank: char.rank,
+      coins: char.coins,
+      gems: char.gems,
+      achievement: 0,
+    }),
+    [char.level, char.rank, char.coins, char.gems],
+  );
+
+  const rewards = useMemo(
+    () =>
+      (rewardData?.items ?? [])
+        .filter((r) => r.status !== 'inactive')
+        .map((r) => toMarketReward(r, char.rank)),
+    [rewardData, char.rank],
+  );
+  const selected = rewards.find((r) => r.id === selectedId) ?? null;
+
+  const filtered = useMemo(
+    () => (activeCat === 'all' ? rewards : rewards.filter((r) => r.rarity === activeCat)),
+    [activeCat, rewards],
+  );
+
+  // Client-side pagination over the reward list.
   const [page, setPage] = useState(1);
   const [prevActiveCat, setPrevActiveCat] = useState(activeCat);
   if (prevActiveCat !== activeCat) {
@@ -95,38 +119,31 @@ export function MarketPlace() {
   const counts = useMemo(() => {
     const c: Record<string, number> = { all: rewards.length };
     rewards.forEach((r) => {
-      c[r.cat] = (c[r.cat] || 0) + 1;
+      c[r.rarity] = (c[r.rarity] || 0) + 1;
     });
-    c.game = rewards.filter((r) => r.cat !== 'real').length;
     return c;
   }, [rewards]);
 
   const handleRedeem = (reward: MarketReward) => {
-    const hasStock = reward.stock == null || reward.stock > 0;
-    if (reward.locked) return;
-    if (player.level < reward.reqLevel) return;
-    if (reward.currency !== 'achievement' && player[reward.currency] < reward.price) return;
-    if (!hasStock) return;
-
-    if (reward.currency !== 'achievement' && reward.price > 0) {
-      setPlayer((p) => ({ ...p, [reward.currency]: p[reward.currency] - reward.price }));
-    }
-
-    setFlashColor(RARITY_COLOR[reward.rarity]);
-    window.setTimeout(() => setFlashColor(null), 800);
-
-    setSuccessMsg(`✦ ${reward.title.toUpperCase()} ACQUIRED ✦`);
-    window.setTimeout(() => setSuccessMsg(null), 3000);
-
-    if (reward.stock != null) {
-      setRewards((prev) =>
-        prev.map((r) =>
-          r.id === reward.id ? { ...r, stock: Math.max(0, (r.stock ?? 0) - 1) } : r,
-        ),
-      );
-    }
-
-    setSelected(null);
+    if (redeeming) return;
+    redeem(reward.id, {
+      onSuccess: ({ coins, gems }) => {
+        // The topbar reads `char`, which only seeds itself once from the profile.
+        setChar((c) => ({ ...c, coins, gems }));
+        setFlashColor(RARITY_COLOR[reward.rarity]);
+        window.setTimeout(() => setFlashColor(null), 800);
+        setSuccessMsg(`✦ ${reward.title.toUpperCase()} ACQUIRED ✦`);
+        window.setTimeout(() => setSuccessMsg(null), 3000);
+        setSelectedId(null);
+      },
+      // The server judges level, rank, funds and stock again, so a stale card gets the real reason.
+      onError: (err) => {
+        const message = (err as { response?: { data?: { message?: string } } }).response?.data
+          ?.message;
+        setErrorMsg(message ?? 'Could not redeem this reward');
+        window.setTimeout(() => setErrorMsg(null), 3000);
+      },
+    });
   };
 
   return (
@@ -139,6 +156,12 @@ export function MarketPlace() {
           <div className={successToast}>
             <span>✓</span>
             <span>{successMsg}</span>
+          </div>
+        )}
+        {errorMsg && (
+          <div className={cn(successToast, errorToast)}>
+            <span>!</span>
+            <span>{errorMsg}</span>
           </div>
         )}
 
@@ -179,11 +202,6 @@ export function MarketPlace() {
             </div>
           </GoldPanel>
 
-          <MarketFeaturedBanner
-            featured={REWARD_DATA.featured as MarketFeaturedReward}
-            onClaim={(r) => setSelected(r)}
-          />
-
           <div className={battlePass}>
             <div className={bpHeader}>
               <span className={bpTitle}>◆ Aetheric Path</span>
@@ -203,28 +221,45 @@ export function MarketPlace() {
 
         <div className={marketWrap}>
           <div className={catTabs}>
-            {MARKET_CATEGORIES.map((cat) => (
+            {MARKET_RARITY_FILTERS.map((key) => (
               <Button
-                key={cat.key}
+                key={key}
                 type="button"
                 variant="ghost"
-                className={cn(catTab, activeCat === cat.key && catTabActive)}
-                onClick={() => setActiveCat(cat.key)}
+                className={cn(catTab, activeCat === key && catTabActive)}
+                onClick={() => setActiveCat(key)}
               >
-                <span>{cat.icon}</span>
-                <span>{tMarket(`categories.${cat.key}`)}</span>
-                <span className={cn(catTabCount, activeCat === cat.key && catTabCountActive)}>
-                  {counts[cat.key] || 0}
+                <span>{key === 'all' ? tMarket('categories.all') : RARITY_LABEL[key]}</span>
+                <span className={cn(catTabCount, activeCat === key && catTabCountActive)}>
+                  {counts[key] || 0}
                 </span>
               </Button>
             ))}
           </div>
 
-          <div className={rewardsGrid}>
-            {pageRewards.map((r) => (
-              <MarketRewardCard key={r.id} reward={r} player={player} onClick={setSelected} />
-            ))}
-          </div>
+          {rewardsPending ? (
+            <div className={emptyNote}>Loading rewards…</div>
+          ) : rewardsFailed ? (
+            <div className={emptyNote}>Could not load rewards. Try again later.</div>
+          ) : rewards.length === 0 ? (
+            <div className={emptyNote}>
+              Nothing on the shelf yet.{' '}
+              <Link href="/manage/rewards" className="text-[var(--gold)] underline">
+                Forge a reward
+              </Link>
+            </div>
+          ) : (
+            <div className={rewardsGrid}>
+              {pageRewards.map((r) => (
+                <MarketRewardCard
+                  key={r.id}
+                  reward={r}
+                  player={player}
+                  onClick={(reward) => setSelectedId(reward.id)}
+                />
+              ))}
+            </div>
+          )}
 
           {totalPages > 1 && (
             <div className="mt-6 flex justify-center sm:mt-8">
@@ -238,7 +273,7 @@ export function MarketPlace() {
         <MarketRewardDetailModal
           reward={selected}
           player={player}
-          onClose={() => setSelected(null)}
+          onClose={() => setSelectedId(null)}
           onRedeem={handleRedeem}
         />
       )}
@@ -365,6 +400,10 @@ const catTabCountActive = 'bg-[var(--gold-fill)] text-[var(--on-gold-fill)]';
 const rewardsGrid =
   'grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] sm:gap-4';
 
+const emptyNote =
+  'py-12 text-center text-[13px] text-[var(--text-mid)] font-[var(--font-title)] tracking-[0.1em]';
+const errorToast =
+  'bg-[linear-gradient(135deg,oklch(0.4_0.2_25),oklch(0.55_0.22_25))] border-[oklch(0.7_0.2_25)] shadow-[0_0_40px_oklch(0.6_0.2_25_/_0.5)]';
 const successToast =
   'fixed top-6 left-1/2 -translate-x-1/2 bg-[linear-gradient(135deg,oklch(0.4_0.18_145),oklch(0.55_0.2_145))] border border-[oklch(0.7_0.18_145)] px-7 py-3.5 rounded-[30px] font-[var(--font-title)] font-bold tracking-[0.15em] text-white z-[1000] flex items-center gap-2.5 shadow-[0_0_40px_oklch(0.6_0.18_145_/_0.5)] animate-[marketplace-toast-in_0.4s_cubic-bezier(0.34,1.56,0.64,1),marketplace-toast-out_0.4s_ease_2.5s_forwards]';
 const redeemFlash =

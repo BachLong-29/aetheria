@@ -65,3 +65,24 @@ export interface RewardListResponse {
   limit: number;
   totalPages: number;
 }
+
+export interface Redemption {
+  id: string;
+  rewardId: string;
+  name: string;
+  icon?: string;
+  color: RewardColor;
+  rarity: RewardRarity;
+  coinCost: number;
+  gemCost: number;
+  /** ISO time the reward was marked as used; absent = still waiting to be enjoyed. */
+  usedAt?: string;
+  createdAt: string;
+}
+
+export interface RedeemResult {
+  redemption: Redemption;
+  /** Balances after the purchase, so the client can show them without another round trip. */
+  coins: number;
+  gems: number;
+}

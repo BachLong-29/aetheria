@@ -1,16 +1,18 @@
 import type {
   MarketRewardCategory,
-  MarketRewardCategoryKey,
+  MarketRarityFilter,
   MarketRewardCurrency,
   MarketRewardRarity,
 } from '../types';
 
-// Filter tabs — reward.cat 'cosmetic' | 'game' | 'booster' | 'quest' all bucket under 'game'
-// ("In-Game") here; see the `filtered`/`counts` grouping in MarketPlace.tsx.
-export const MARKET_CATEGORIES: { key: MarketRewardCategoryKey; label: string; icon: string }[] = [
-  { key: 'all', label: 'All Rewards', icon: '✦' },
-  { key: 'real', label: 'Real-World', icon: '📦' },
-  { key: 'game', label: 'In-Game', icon: '🎮' },
+// Filter tabs — a stored reward has a rarity but no category, so the shelf filters by rarity.
+export const MARKET_RARITY_FILTERS: MarketRarityFilter[] = [
+  'all',
+  'common',
+  'uncommon',
+  'rare',
+  'epic',
+  'legendary',
 ];
 
 // Each reward's own specific category badge (detail modal) — kept granular even though the

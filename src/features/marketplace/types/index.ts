@@ -1,5 +1,5 @@
 export type MarketRewardCategory = 'real' | 'cosmetic' | 'game' | 'booster' | 'quest';
-export type MarketRewardCategoryKey = 'all' | MarketRewardCategory;
+export type MarketRarityFilter = 'all' | MarketRewardRarity;
 export type MarketRewardCurrency = 'coins' | 'gems' | 'achievement';
 export type MarketRewardRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'mythic';
 
@@ -25,6 +25,8 @@ export interface MarketReward {
   rarity: MarketRewardRarity;
   price: number;
   currency: MarketRewardCurrency;
+  /** A second price in gems, charged together with `price` (coins). */
+  gemsExtra?: number;
   reqLevel: number;
   locked: boolean;
   desc: string;

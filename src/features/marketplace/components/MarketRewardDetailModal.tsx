@@ -24,7 +24,8 @@ export function MarketRewardDetailModal({
 }: MarketRewardDetailModalProps) {
   const tMarket = useTranslations('marketplace');
   const hasCurrency =
-    reward.currency === 'achievement' ? true : player[reward.currency] >= reward.price;
+    (reward.currency === 'achievement' ? true : player[reward.currency] >= reward.price) &&
+    player.gems >= (reward.gemsExtra ?? 0);
   const hasLevel = player.level >= reward.reqLevel;
   const hasStock = reward.stock == null || reward.stock > 0;
   const canRedeem = !reward.locked && hasCurrency && hasLevel && hasStock;
@@ -42,6 +43,14 @@ export function MarketRewardDetailModal({
       label: `${reward.price.toLocaleString()} ${CURRENCY_ICON[reward.currency]} ${reward.currency}`,
       met: hasCurrency,
       val: `${player[reward.currency].toLocaleString()} owned`,
+    });
+  }
+
+  if (reward.gemsExtra) {
+    conditions.push({
+      label: `${reward.gemsExtra.toLocaleString()} ${CURRENCY_ICON.gems} gems`,
+      met: player.gems >= reward.gemsExtra,
+      val: `${player.gems.toLocaleString()} owned`,
     });
   }
 

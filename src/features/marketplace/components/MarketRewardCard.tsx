@@ -28,7 +28,8 @@ export function MarketRewardCard({ reward, player, onClick }: MarketRewardCardPr
   const tMarket = useTranslations('marketplace');
   const hasStock = reward.stock == null || reward.stock > 0;
   const hasCurrency =
-    reward.currency === 'achievement' ? true : player[reward.currency] >= reward.price;
+    (reward.currency === 'achievement' ? true : player[reward.currency] >= reward.price) &&
+    player.gems >= (reward.gemsExtra ?? 0);
   const canRedeem = hasCurrency && player.level >= reward.reqLevel && hasStock;
 
   return (
@@ -74,7 +75,12 @@ export function MarketRewardCard({ reward, player, onClick }: MarketRewardCardPr
           <div className={rewardBottom}>
             <div className={cn(rewardPrice, rewardPriceByCurrency[reward.currency])}>
               <span>{CURRENCY_ICON[reward.currency]}</span>
-              <span>{formatPrice(reward)}</span>
+              <span>
+                {formatPrice(reward)}
+                {reward.gemsExtra
+                  ? ` + ${CURRENCY_ICON.gems} ${reward.gemsExtra.toLocaleString()}`
+                  : ''}
+              </span>
             </div>
             {!reward.locked && (
               <Button
