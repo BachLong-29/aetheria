@@ -4,8 +4,10 @@ import type { NextRequest } from 'next/server';
 import { connectDB } from '@/libs/mongodb';
 import { getAuthUser } from '@/server/helpers/get-auth-user';
 import { TaskLogModel, type ITaskLog } from '@/server/models/task-log.model';
+import { awardProgress } from '@/server/services/progress';
 import { asyncHandler, successResponse, unauthorizedResponse } from '@/server';
 import { validateBody, validateSearchParams } from '@/server/validate';
+import { TASK_COINS, TASK_XP } from '@/constants/progress';
 import type { TaskLog } from '@/types/task-log';
 
 // ─── Serializer ───────────────────────────────────────────────────────────────
@@ -91,5 +93,17 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     note: data.note,
   });
 
-  return successResponse(serialize(log), 'Task log created');
+  // A day's log pays that day once; removing it and logging again does not pay twice.
+  const reward = await awardProgress(user.sub, {
+    kind: 'task-log',
+    refId: data.taskId,
+    date: data.date,
+    xp: TASK_XP,
+    coins: TASK_COINS,
+  });
+
+  return successResponse(
+    reward ? { ...serialize(log), reward } : serialize(log),
+    'Task log created',
+  );
 });

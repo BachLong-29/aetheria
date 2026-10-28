@@ -25,6 +25,8 @@ export function useUpdateQuestStatus() {
       // serving the pre-tick state.
       queryClient.invalidateQueries({ queryKey: queryKeys.quests.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.calendar.all });
+      // The server pays xp and coins when this lands, so the hero panel is stale until it reloads.
+      queryClient.invalidateQueries({ queryKey: queryKeys.profile.all });
     },
   });
 }

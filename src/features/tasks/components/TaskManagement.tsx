@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 
 import { useProfile } from '@/features/profile/hooks/useProfile';
@@ -38,15 +38,15 @@ export function TaskManagement({ initialSearch = '' }: { initialSearch?: string 
 
   // ── Character state (for topbar) ────────────────────────────────────────────
   const { data: profileData } = useProfile();
-  const charInitialized = useRef(false);
   const [char, setChar] = useState<Character>(() => buildEmptyChar());
 
-  useEffect(() => {
-    const profile = profileData?.profile;
-    if (!profile || charInitialized.current) return;
-    setChar(profileToCharacter(profile));
-    charInitialized.current = true;
-  }, [profileData]);
+  // Follows the profile API: awards show locally at once, the reload after the server pays
+  // replaces them with the stored numbers.
+  const [seenProfile, setSeenProfile] = useState(profileData);
+  if (profileData !== seenProfile) {
+    setSeenProfile(profileData);
+    if (profileData?.profile) setChar(profileToCharacter(profileData.profile));
+  }
 
   const { awardProgress } = useCharacterProgress(char, setChar);
 

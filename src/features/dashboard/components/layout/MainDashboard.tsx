@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 import { useProfile } from '@/features/profile/hooks/useProfile';
@@ -57,16 +57,15 @@ export default function MainDashboard() {
     [],
   );
 
-  // Character — one-time initialization from profile API
+  // Character — follows the profile API. Awards show locally at once, then the reload after the
+  // server pays replaces them with the stored numbers, so the server stays the source of truth.
   const [char, setChar] = useState<Character>(buildEmptyChar);
-  const charInitialized = useRef(false);
   const { data: profileData } = useProfile();
-  useEffect(() => {
-    const profile = profileData?.profile;
-    if (!profile || charInitialized.current) return;
-    setChar(profileToCharacter(profile));
-    charInitialized.current = true;
-  }, [profileData]);
+  const [seenProfile, setSeenProfile] = useState(profileData);
+  if (profileData !== seenProfile) {
+    setSeenProfile(profileData);
+    if (profileData?.profile) setChar(profileToCharacter(profileData.profile));
+  }
 
   // Feedback state
   const [burst, setBurst] = useState<BurstPos | null>(null);

@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { queryKeys } from '@/constants/query-keys';
 import { apiClient } from '@/libs/axios';
 import type { ApiResponse, TaskLog, ToggleTaskLogPayload } from '@/types';
 
@@ -16,6 +17,8 @@ export function useToggleTaskLog() {
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['task-logs', variables.date] });
+      // The server pays xp and coins when this lands, so the hero panel is stale until it reloads.
+      queryClient.invalidateQueries({ queryKey: queryKeys.profile.all });
     },
   });
 }

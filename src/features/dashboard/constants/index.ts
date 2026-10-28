@@ -22,8 +22,14 @@ export const SCHED_COLORS: Record<QuestType, string> = {
   // task: '#67e8f9',
 };
 
-export const TASK_XP = 60;
-export const TASK_COINS = 15;
+export {
+  TASK_XP,
+  TASK_COINS,
+  HABIT_XP,
+  HABIT_COINS,
+  RANKS,
+  RANK_LEVEL_THRESHOLDS,
+} from '@/constants/progress';
 
 export const QUOTES = [
   {
@@ -63,26 +69,11 @@ export const DEFAULT_SETTINGS: DashboardSettings = {
   showQuoteCard: true,
 };
 
-export const RANKS = ['F', 'E', 'D', 'C', 'B', 'A', 'S'] as const;
-
-/** Minimum level required to auto-promote to each rank */
-export const RANK_LEVEL_THRESHOLDS: Partial<Record<(typeof RANKS)[number], number>> = {
-  E: 5,
-  D: 10,
-  C: 20,
-  B: 35,
-  A: 55,
-  S: 80,
-};
-
 export const SKIP_CONFIRM_STORAGE_KEY = 'aetheria_skip_quest_confirm';
 export const QUEST_ROLLOVER_KEY = 'aetheria_quest_rollover_date';
 export const SUNDAY_REMINDER_KEY = 'aetheria_sunday_planning_reminded';
 export const MONTHLY_REMINDER_KEY = 'aetheria_monthly_planning_reminded';
 export const TASK_PENALTY_KEY = 'aetheria_task_penalty_date';
-
-export const HABIT_XP = 30;
-export const HABIT_COINS = 10;
 
 export const HABIT_COLORS: Record<HabitColor, { label: string; value: string }> = {
   gold: { label: 'Gold', value: 'oklch(0.74 0.17 85)' },

@@ -5,8 +5,10 @@ import { connectDB } from '@/libs/mongodb';
 import { getAuthUser } from '@/server/helpers/get-auth-user';
 import { QuestModel } from '@/server/models/quest.model';
 import { ScheduleBlockModel } from '@/server/models/schedule-block.model';
+import { awardProgress, todayKey } from '@/server/services/progress';
 import { asyncHandler, notFoundResponse, successResponse, unauthorizedResponse } from '@/server';
 import { validateBody } from '@/server/validate';
+import { S_QUEST_GEMS } from '@/constants/progress';
 import type { Quest } from '@/types/quest';
 import type { IQuest } from '@/server/models/quest.model';
 
@@ -71,7 +73,21 @@ export const PATCH = asyncHandler(async (req: NextRequest, ctx) => {
 
   if (!quest) return notFoundResponse('Quest not found');
 
-  return successResponse(serialize(quest), 'Quest updated');
+  const reward = data.done
+    ? await awardProgress(user.sub, {
+        kind: 'quest',
+        refId: quest._id.toString(),
+        date: todayKey(),
+        xp: quest.xp,
+        coins: quest.coins,
+        gems: quest.difficulty === 'S' ? S_QUEST_GEMS : 0,
+      })
+    : null;
+
+  return successResponse(
+    reward ? { ...serialize(quest), reward } : serialize(quest),
+    'Quest updated',
+  );
 });
 
 // DELETE /api/v1/quests/:id

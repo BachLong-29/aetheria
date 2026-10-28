@@ -5,8 +5,10 @@ import { connectDB } from '@/libs/mongodb';
 import { getAuthUser } from '@/server/helpers/get-auth-user';
 import { ScheduleBlockModel } from '@/server/models/schedule-block.model';
 import { TaskModel } from '@/server/models/task.model';
+import { awardProgress, todayKey } from '@/server/services/progress';
 import { asyncHandler, notFoundResponse, successResponse, unauthorizedResponse } from '@/server';
 import { validateBody } from '@/server/validate';
+import { TASK_COINS, TASK_XP } from '@/constants/progress';
 import type { Task } from '@/types/task';
 import type { ITask } from '@/server/models/task.model';
 
@@ -116,7 +118,19 @@ export const PATCH = asyncHandler(async (req: NextRequest, ctx) => {
 
   if (!task) return notFoundResponse('Task not found');
 
-  return successResponse(serialize(task), 'Task updated');
+  // The ledger makes finishing pay once a day however many times the status flips.
+  const reward =
+    data.status === 'done'
+      ? await awardProgress(user.sub, {
+          kind: 'task',
+          refId: task._id.toString(),
+          date: todayKey(),
+          xp: TASK_XP,
+          coins: TASK_COINS,
+        })
+      : null;
+
+  return successResponse(reward ? { ...serialize(task), reward } : serialize(task), 'Task updated');
 });
 
 // DELETE /api/v1/tasks/:id

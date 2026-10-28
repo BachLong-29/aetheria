@@ -1,7 +1,5 @@
 import { useCallback, useLayoutEffect, useRef } from 'react';
-import { useMutation } from '@tanstack/react-query';
 
-import { apiClient } from '@/libs/axios';
 import { RANKS, RANK_LEVEL_THRESHOLDS } from '../constants';
 import type { Character } from '../types';
 
@@ -9,28 +7,6 @@ interface ProgressAward {
   xp: number;
   coins: number;
   gems?: number;
-}
-
-interface GameStatePatch {
-  level: number;
-  xp: number;
-  xpNext: number;
-  streak: number;
-  coins: number;
-  gems: number;
-  rank: string;
-}
-
-function toGameStatePatch(c: Character): GameStatePatch {
-  return {
-    level: c.level,
-    xp: c.xp,
-    xpNext: c.xpNext,
-    streak: c.streak,
-    coins: c.coins,
-    gems: c.gems,
-    rank: c.rank,
-  };
 }
 
 /** Returns the highest rank the character qualifies for at `level`. */
@@ -55,12 +31,10 @@ export function useCharacterProgress(
     charRef.current = char;
   });
 
-  const { mutate: syncToApi } = useMutation({
-    mutationFn: (state: GameStatePatch) => apiClient.put('/profile', state).then((r) => r.data),
-  });
-
   // Use after quest / habit / task completion.
-  // Handles level-up and rank auto-promotion, then persists to API.
+  // Shows the payout at once, level-up and rank promotion included. The server pays the same
+  // amount when the completion request lands (see `awardProgress` in the API) and the profile
+  // reload that follows replaces this local guess with the stored numbers.
   const awardProgress = useCallback(
     (award: ProgressAward) => {
       const c = charRef.current;
@@ -91,22 +65,20 @@ export function useCharacterProgress(
         rank: newRank,
       };
       setChar(next);
-      syncToApi(toGameStatePatch(next));
 
       if (leveled) onLevelUp?.(next.level, promotedRank);
     },
-    [setChar, syncToApi, onLevelUp],
+    [setChar, onLevelUp],
   );
 
   // Use for penalties and other arbitrary char mutations.
-  // Accepts a pure updater function and persists the result to API.
+  // Local only: the API owns xp, coins, gems, level and rank.
   const applyGamePatch = useCallback(
     (updater: (prev: Character) => Character) => {
       const next = updater(charRef.current);
       setChar(next);
-      syncToApi(toGameStatePatch(next));
     },
-    [setChar, syncToApi],
+    [setChar],
   );
 
   return { awardProgress, applyGamePatch };

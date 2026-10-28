@@ -4,8 +4,10 @@ import type { NextRequest } from 'next/server';
 import { connectDB } from '@/libs/mongodb';
 import { getAuthUser } from '@/server/helpers/get-auth-user';
 import { HabitLogModel } from '@/server/models/habit-log.model';
+import { awardProgress } from '@/server/services/progress';
 import { asyncHandler, successResponse, unauthorizedResponse } from '@/server';
 import { validateBody, validateSearchParams } from '@/server/validate';
+import { HABIT_COINS, HABIT_XP } from '@/constants/progress';
 import type { HabitLog } from '@/types/habit';
 import type { IHabitLog } from '@/server/models/habit-log.model';
 
@@ -84,5 +86,18 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     { upsert: true, new: true, setDefaultsOnInsert: true },
   );
 
-  return successResponse(serialize(log), 'Habit log updated');
+  const reward = data.done
+    ? await awardProgress(user.sub, {
+        kind: 'habit',
+        refId: data.habitId,
+        date: data.date.slice(0, 10),
+        xp: HABIT_XP,
+        coins: HABIT_COINS,
+      })
+    : null;
+
+  return successResponse(
+    reward ? { ...serialize(log), reward } : serialize(log),
+    'Habit log updated',
+  );
 });

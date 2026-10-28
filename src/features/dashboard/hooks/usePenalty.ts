@@ -57,6 +57,8 @@ export function useCompletePenalty() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.penalty.active() });
+      // The server pays xp and coins when this lands, so the hero panel is stale until it reloads.
+      queryClient.invalidateQueries({ queryKey: queryKeys.profile.all });
     },
   });
 }

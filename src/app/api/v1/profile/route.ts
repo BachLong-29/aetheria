@@ -37,13 +37,8 @@ const updateSchema = z.object({
   statPool: z.number().min(10).max(50).optional(),
   primaryFocus: z.array(z.string()).max(4).optional(),
   badges: z.array(z.string()).max(4).optional(),
-  level: z.number().min(1).optional(),
-  xp: z.number().min(0).optional(),
-  xpNext: z.number().min(1).optional(),
-  streak: z.number().min(0).optional(),
-  coins: z.number().min(0).optional(),
-  gems: z.number().min(0).optional(),
-  rank: z.string().optional(),
+  // level, xp, xpNext, streak, coins, gems and rank are not accepted here: the server pays and
+  // levels the hero (see `awardProgress`), so a client can't write its own balance.
   morningRitual: z.boolean().optional(),
   nightlyReview: z.boolean().optional(),
   streakProtection: z.number().min(0).max(3).optional(),
@@ -189,13 +184,6 @@ export const PUT = asyncHandler(async (req: NextRequest) => {
     'statPool',
     'primaryFocus',
     'badges',
-    'level',
-    'xp',
-    'xpNext',
-    'streak',
-    'coins',
-    'gems',
-    'rank',
   ] as const;
 
   const settingKeys = [
