@@ -48,17 +48,38 @@ export const PATCH = asyncHandler(async (req: NextRequest, ctx) => {
   return successResponse(serialize(category), 'Category updated');
 });
 
-// DELETE /api/v1/finance/categories/:id
+// DELETE /api/v1/finance/categories/:id[?dryRun=true]
+// `dryRun` answers "what would stop this delete?" without deleting anything, so the UI can warn
+// before the user confirms. The real delete re-checks the same rules.
 export const DELETE = asyncHandler(async (req: NextRequest, ctx) => {
   const user = getAuthUser(req);
   if (!user) return unauthorizedResponse();
 
   const { id } = await ctx.params;
+  const dryRun = req.nextUrl.searchParams.get('dryRun') === 'true';
 
   await connectDB();
 
-  const inUse = await TransactionModel.exists({ userId: user.sub, categoryId: id });
-  if (inUse) {
+  const [transactions, budgets] = await Promise.all([
+    TransactionModel.countDocuments({ userId: user.sub, categoryId: id }),
+    BudgetModel.countDocuments({
+      userId: user.sub,
+      categoryId: id,
+      month: { $gte: currentMonthKey() },
+    }),
+  ]);
+
+  if (dryRun) {
+    const exists = await FinanceCategoryModel.exists({ _id: id, userId: user.sub });
+    if (!exists) return notFoundResponse('Category not found');
+    return successResponse({
+      canDelete: transactions === 0 && budgets === 0,
+      transactions,
+      budgets,
+    });
+  }
+
+  if (transactions > 0) {
     return NextResponse.json(
       {
         success: false,
@@ -68,12 +89,7 @@ export const DELETE = asyncHandler(async (req: NextRequest, ctx) => {
     );
   }
 
-  const hasBudget = await BudgetModel.exists({
-    userId: user.sub,
-    categoryId: id,
-    month: { $gte: currentMonthKey() },
-  });
-  if (hasBudget) {
+  if (budgets > 0) {
     return NextResponse.json(
       {
         success: false,

@@ -52,6 +52,15 @@ export interface SepayKeyResult {
   webhookUrl: string;
 }
 
+/** Dry-run answer for deleting a category: what would block it. */
+export interface CategoryDeleteCheck {
+  canDelete: boolean;
+  /** Transactions filed under the category. */
+  transactions: number;
+  /** Budgets for the current or a future month. */
+  budgets: number;
+}
+
 export interface FinanceCategory {
   id: string;
   userId: string;

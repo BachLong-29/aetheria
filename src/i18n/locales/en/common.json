@@ -1129,6 +1129,7 @@
       "title": "Budget",
       "setBudget": "Set budget",
       "pastMonth": "Cannot set a budget for a past month",
+      "reload": "Reload budgets",
       "panel": "Budgets",
       "empty": "No budget set for {month}",
       "emptyHint": "Set a monthly limit — overall or per category — to track your spending.",
@@ -1260,7 +1261,10 @@
       "deleteTag": "CONFIRM",
       "deleteTitle": "Delete category",
       "confirmDelete": "Delete the category “{name}”?",
-      "deleteBlocked": "Could not delete the category"
+      "deleteBlocked": "Could not delete the category",
+      "checking": "Checking whether it is in use…",
+      "inUseTransactions": "Used by {count, plural, one {# transaction} other {# transactions}} — move or delete them first.",
+      "inUseBudgets": "Has {count, plural, one {# budget} other {# budgets}} for this month or later — remove them first."
     },
     "sepayCard": {
       "title": "Bank sync (SePay)",

@@ -16,6 +16,7 @@ import type { FinanceCategory, FinanceCategoryType } from '@/types';
 
 import { COLOR_CSS } from '../constants';
 import { useFinanceCategories } from '../hooks/useFinanceCategories';
+import { useCategoryDeleteCheck } from '../hooks/useCategoryDeleteCheck';
 import { useDeleteFinanceCategory } from '../hooks/useDeleteFinanceCategory';
 import { FinanceCategoryFormModal } from './FinanceCategoryFormModal';
 import { FinancePageHeader } from './FinancePageHeader';
@@ -58,6 +59,8 @@ export function FinanceCategoriesPage() {
   const [editing, setEditing] = useState<FinanceCategory | null>(null);
   const [formType, setFormType] = useState<FinanceCategoryType>('expense');
   const [deleting, setDeleting] = useState<FinanceCategory | null>(null);
+  const { data: deleteCheck, isLoading: checkingDelete } = useCategoryDeleteCheck(deleting?.id);
+  const deleteBlocked = deleteCheck ? !deleteCheck.canDelete : false;
 
   const expense = categories.filter((c) => c.type === 'expense');
   const income = categories.filter((c) => c.type === 'income');
@@ -184,6 +187,23 @@ export function FinanceCategoriesPage() {
           <p className="text-[13px] leading-relaxed text-[var(--text-mid)]">
             {t('categories.confirmDelete', { name: deleting?.name ?? '' })}
           </p>
+          {checkingDelete ? (
+            <p className="mt-2 text-[12px] text-[var(--text-lo)]">{t('categories.checking')}</p>
+          ) : deleteBlocked && deleteCheck ? (
+            <div
+              role="alert"
+              className="mt-3 flex flex-col gap-1 rounded-[var(--r-md)] border border-[var(--crimson)] p-3 text-[12px] leading-relaxed text-[var(--crimson)]"
+            >
+              {deleteCheck.transactions > 0 && (
+                <span>
+                  {t('categories.inUseTransactions', { count: deleteCheck.transactions })}
+                </span>
+              )}
+              {deleteCheck.budgets > 0 && (
+                <span>{t('categories.inUseBudgets', { count: deleteCheck.budgets })}</span>
+              )}
+            </div>
+          ) : null}
         </ModalBody>
         <ModalFoot>
           <Button
@@ -197,7 +217,7 @@ export function FinanceCategoriesPage() {
             variant="danger"
             onClick={handleDeleteConfirm}
             isLoading={deleteCategory.isPending}
-            disabled={deleteCategory.isPending}
+            disabled={deleteCategory.isPending || checkingDelete || deleteBlocked}
           >
             {t('common.delete')}
           </Button>

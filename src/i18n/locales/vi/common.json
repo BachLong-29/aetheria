@@ -1129,6 +1129,7 @@
       "title": "Ngân sách",
       "setBudget": "Đặt ngân sách",
       "pastMonth": "Không đặt được ngân sách cho tháng đã qua",
+      "reload": "Tải lại ngân sách",
       "panel": "Ngân sách",
       "empty": "Chưa đặt ngân sách cho {month}",
       "emptyHint": "Đặt hạn mức theo tháng — tổng hoặc theo từng danh mục — để theo dõi chi tiêu.",
@@ -1260,7 +1261,10 @@
       "deleteTag": "XÁC NHẬN",
       "deleteTitle": "Xoá danh mục",
       "confirmDelete": "Xoá danh mục “{name}”?",
-      "deleteBlocked": "Không xoá được danh mục"
+      "deleteBlocked": "Không xoá được danh mục",
+      "checking": "Đang kiểm tra xem có đang được dùng không…",
+      "inUseTransactions": "Đang có {count} giao dịch dùng danh mục này — hãy chuyển hoặc xoá chúng trước.",
+      "inUseBudgets": "Đang có {count} ngân sách từ tháng này trở đi — hãy xoá chúng trước."
     },
     "sepayCard": {
       "title": "Đồng bộ ngân hàng (SePay)",

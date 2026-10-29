@@ -29,8 +29,9 @@ export function BudgetPage() {
   const t = useTranslations('finance');
   const locale = useLocale();
   const [month, setMonth] = useState(currentMonthKey());
-  const { data: budgets = [], isLoading } = useBudgets(month);
-  const { data: expenseCategories = [] } = useFinanceCategories('expense');
+  const { data: budgets = [], isLoading, isFetching, refetch } = useBudgets(month);
+  const { data: expenseCategories = [], refetch: refetchCategories } =
+    useFinanceCategories('expense');
   const deleteBudget = useDeleteBudget();
   const addToast = useUIStore((s) => s.addToast);
 
@@ -121,6 +122,19 @@ export function BudgetPage() {
                 onChange={setMonth}
                 className="h-9 min-w-0 flex-1 justify-between sm:h-auto sm:w-auto sm:flex-none sm:justify-start"
               />
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  void refetch();
+                  void refetchCategories();
+                }}
+                disabled={isFetching}
+                title={t('budget.reload')}
+                aria-label={t('budget.reload')}
+                className={compactBtn}
+              >
+                <span className={isFetching ? 'inline-block animate-spin' : 'inline-block'}>↻</span>
+              </Button>
               <Button
                 variant="ghost"
                 onClick={downloadTemplate}

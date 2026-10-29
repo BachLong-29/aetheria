@@ -5,6 +5,7 @@ import type {
   CreateWalletPayload,
   UpdateWalletPayload,
   FinanceCategory,
+  CategoryDeleteCheck,
   CreateFinanceCategoryPayload,
   UpdateFinanceCategoryPayload,
   Transaction,
@@ -85,6 +86,11 @@ export const financeEndpoints = {
     apiClient.patch<ApiResponse<FinanceCategory>>(`/finance/categories/${id}`, payload),
 
   removeCategory: (id: string) => apiClient.delete<ApiResponse<null>>(`/finance/categories/${id}`),
+
+  checkCategoryDelete: (id: string) =>
+    apiClient.delete<ApiResponse<CategoryDeleteCheck>>(`/finance/categories/${id}`, {
+      params: { dryRun: true },
+    }),
 
   listTransactions: (filters?: TransactionFilters) =>
     apiClient.get<ApiResponse<Transaction[]>>(`/finance/transactions${toQueryString(filters)}`),
