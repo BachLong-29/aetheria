@@ -24,7 +24,6 @@ interface ScheduleViewProps {
   onAddQuest?: (quest: Quest) => void;
   onNavigateTab?: (tab: CenterTab) => void;
   subTabRequest?: ScheduleSubTabRequest | null;
-  onReward?: (reward: { xp: number; coins: number }) => void;
 }
 
 /**
@@ -34,12 +33,7 @@ interface ScheduleViewProps {
  */
 const SUB_TABS = ['day', 'week'] as const;
 
-export function ScheduleView({
-  onAddQuest,
-  onNavigateTab,
-  subTabRequest,
-  onReward,
-}: ScheduleViewProps) {
+export function ScheduleView({ onAddQuest, onNavigateTab, subTabRequest }: ScheduleViewProps) {
   const tDash = useTranslations('dashboard');
   const tShare = useTranslations('share');
   const {
@@ -261,7 +255,6 @@ export function ScheduleView({
             showTasks={display.showTasks}
             showQuests={display.showQuests}
             showHabits={display.showHabits}
-            onReward={onReward}
             onAddQuest={onAddQuest}
           />
         )}

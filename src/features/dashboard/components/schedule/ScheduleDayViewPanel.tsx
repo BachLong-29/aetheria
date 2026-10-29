@@ -27,8 +27,6 @@ interface Props {
   showQuests?: boolean;
   showHabits?: boolean;
   onAddQuest?: (q: Quest) => void;
-  /** Credits the character + shows the XP toast when an item is ticked done here. */
-  onReward?: (reward: { xp: number; coins: number }) => void;
 }
 
 export function ScheduleDayViewPanel({
@@ -38,7 +36,6 @@ export function ScheduleDayViewPanel({
   showQuests = true,
   showHabits = true,
   onAddQuest,
-  onReward,
 }: Props) {
   const t = useTranslations('dashboard');
 
@@ -64,7 +61,6 @@ export function ScheduleDayViewPanel({
     showQuests,
     showHabits,
     requireBlock: true,
-    onReward,
   });
 
   // ── Create-modal + expand UI state ─────────────────────────────────────────

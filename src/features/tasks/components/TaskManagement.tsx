@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 
 import { useProfile } from '@/features/profile/hooks/useProfile';
@@ -9,7 +9,7 @@ import { toLocalDate } from '../utils/date.utils';
 import { useScheduleDayTasks } from '@/features/dashboard/hooks/useScheduleDayTasks';
 import { useTasksPaged } from '@/features/dashboard/hooks/useTasksPaged';
 import { useCategories } from '@/features/dashboard/hooks/useCategories';
-import { useCharacterProgress } from '@/features/dashboard/hooks/useCharacterProgress';
+import { useServerReward } from '@/features/dashboard/hooks/useServerReward';
 import { XPToast } from '@/features/dashboard/components/feedback/XPToast';
 import type { Character } from '@/features/dashboard/types';
 import type { TaskColor } from '@/types';
@@ -48,17 +48,9 @@ export function TaskManagement({ initialSearch = '' }: { initialSearch?: string 
     if (profileData?.profile) setChar(profileToCharacter(profileData.profile));
   }
 
-  const { awardProgress } = useCharacterProgress(char, setChar);
-
-  // Reward feedback for items ticked done on this page — same payout as the dashboard.
+  // Reward feedback for items ticked done on this page — what the API actually paid.
   const [reward, setReward] = useState<{ xp: number; coins: number } | null>(null);
-  const handleReward = useCallback(
-    (next: { xp: number; coins: number }) => {
-      awardProgress(next);
-      setReward(next);
-    },
-    [awardProgress],
-  );
+  useServerReward({ onPaid: (paid) => setReward({ xp: paid.xp, coins: paid.coins }) });
 
   const dateStr = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
@@ -94,7 +86,6 @@ export function TaskManagement({ initialSearch = '' }: { initialSearch?: string 
     // Only surface tasks that have a planned session (schedule block) on the day —
     // tasks with a start/end date but no session plan are hidden from the grid.
     requireBlock: true,
-    onReward: handleReward,
     onEditHabit: () => {
       const locale = params?.locale ?? 'en';
       router.push(`/${locale}/dashboard?tab=habits`);

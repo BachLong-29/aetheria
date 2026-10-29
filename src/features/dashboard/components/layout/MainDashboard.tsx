@@ -7,6 +7,7 @@ import { useProfile } from '@/features/profile/hooks/useProfile';
 
 import { DEFAULT_SETTINGS, QUOTES } from '../../constants';
 import { useCharacterProgress } from '../../hooks/useCharacterProgress';
+import { useServerReward } from '../../hooks/useServerReward';
 import { useDailyInit } from '../../hooks/useDailyInit';
 import { usePenaltyFlow } from '../../hooks/usePenaltyFlow';
 import { useQuestOrchestration } from '../../hooks/useQuestOrchestration';
@@ -80,7 +81,13 @@ export default function MainDashboard() {
     [],
   );
 
-  const { awardProgress, applyGamePatch } = useCharacterProgress(char, setChar, handleLevelUp);
+  const { applyGamePatch } = useCharacterProgress(char, setChar);
+
+  // What is paid comes from the API, so the toast and the level-up show what was really earned.
+  useServerReward({
+    onPaid: (reward) => setToast({ xp: reward.xp, coins: reward.coins }),
+    onLevelUp: handleLevelUp,
+  });
 
   const onBurst = useCallback(
     (pos: BurstPos) => {
@@ -88,26 +95,13 @@ export default function MainDashboard() {
     },
     [settings.animationsEnabled],
   );
-  const onToast = useCallback((reward: { xp: number; coins: number }) => setToast(reward), []);
-
-  // Ticking an item done in the schedule day view pays out exactly like the quest panel does.
-  const handleScheduleReward = useCallback(
-    (reward: { xp: number; coins: number }) => {
-      awardProgress(reward);
-      onToast(reward);
-    },
-    [awardProgress, onToast],
-  );
-
   // Quest / habit / task orchestration
   const { quests, pendingQuest, handleConfirmQuest, handleAddQuest, handleCancelQuest } =
     useQuestOrchestration({
       todayDateStr,
       todayDayStr,
       animationsEnabled: settings.animationsEnabled,
-      onAwardProgress: awardProgress,
       onBurst,
-      onToast,
     });
 
   // Overdue task review
@@ -128,7 +122,7 @@ export default function MainDashboard() {
     handlePenaltyComplete,
     handlePenaltyFail,
     handleFailureContinue,
-  } = usePenaltyFlow({ quests, overdueTasks: overdueItems, applyGamePatch, onToast });
+  } = usePenaltyFlow({ quests, overdueTasks: overdueItems, applyGamePatch });
 
   // Daily init effects (rollover, Sunday reminder, monthly reminder)
   useDailyInit({ onQuestsRolledOver: issueQuestPenalty });
@@ -263,7 +257,6 @@ export default function MainDashboard() {
             tab={centerTab}
             onTabChange={handleTabChange}
             onAddQuest={handleAddQuest}
-            onReward={handleScheduleReward}
             todayDateStr={todayDateStr}
             scheduleSubTabRequest={scheduleSubTabRequest}
           />
@@ -291,7 +284,6 @@ export default function MainDashboard() {
                 tab={centerTab}
                 onTabChange={handleTabChange}
                 onAddQuest={handleAddQuest}
-                onReward={handleScheduleReward}
                 todayDateStr={todayDateStr}
                 scheduleSubTabRequest={scheduleSubTabRequest}
               />

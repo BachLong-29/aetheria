@@ -3,6 +3,8 @@ import axios, { type AxiosError, type AxiosInstance, type InternalAxiosRequestCo
 import { clientEnv } from '@/configs/env';
 import { TOKEN_KEYS, TOKEN_MAX_AGE } from '@/constants/auth';
 import { deleteCookie, getCookie, setCookie } from '@/libs/cookies';
+import { useRewardStore } from '@/stores/reward.store';
+import type { ProgressReward } from '@/types';
 
 let isRefreshing = false;
 let failedQueue: Array<{ resolve: (value: string) => void; reject: (error: unknown) => void }> = [];
@@ -49,7 +51,13 @@ export function createApiClient(baseURL?: string): AxiosInstance {
   });
 
   instance.interceptors.response.use(
-    (response) => response,
+    (response) => {
+      // The API pays xp and coins when something is finished and says so in that response.
+      const reward = (response.data as { data?: { reward?: ProgressReward } } | undefined)?.data
+        ?.reward;
+      if (reward) useRewardStore.getState().announce(reward);
+      return response;
+    },
     async (error: AxiosError) => {
       const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 

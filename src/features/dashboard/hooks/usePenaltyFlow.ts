@@ -16,10 +16,9 @@ interface Params {
   quests: Quest[];
   overdueTasks: OverdueItem[];
   applyGamePatch: (updater: (prev: Character) => Character) => void;
-  onToast: (t: { xp: number; coins: number }) => void;
 }
 
-export function usePenaltyFlow({ quests, overdueTasks, applyGamePatch, onToast }: Params) {
+export function usePenaltyFlow({ quests, overdueTasks, applyGamePatch }: Params) {
   const { mutate: createPenalty } = useCreatePenalty();
   const { mutate: completePenalty } = useCompletePenalty();
   const { mutate: failPenalty } = useFailPenalty();
@@ -103,14 +102,13 @@ export function usePenaltyFlow({ quests, overdueTasks, applyGamePatch, onToast }
 
   const handlePenaltyComplete = useCallback(() => {
     completePenalty();
-    onToast({ xp: 50, coins: 10 });
     setPenaltyState(null);
     notifyRef.current({
       type: 'reward',
       title: '✓ Penalty Quest Complete',
       message: 'You completed the corrective task. Consequences averted. Well done.',
     });
-  }, [completePenalty, onToast]);
+  }, [completePenalty]);
 
   const handlePenaltyFail = useCallback(() => {
     if (!penaltyState) return;

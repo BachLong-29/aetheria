@@ -47,18 +47,14 @@ interface Params {
   todayDateStr: string;
   todayDayStr: HabitDay;
   animationsEnabled: boolean;
-  onAwardProgress: (award: { xp: number; coins: number; gems?: number }) => void;
   onBurst: (pos: BurstPos) => void;
-  onToast: (t: { xp: number; coins: number }) => void;
 }
 
 export function useQuestOrchestration({
   todayDateStr,
   todayDayStr,
   animationsEnabled,
-  onAwardProgress,
   onBurst,
-  onToast,
 }: Params) {
   const { data: serverQuests, isLoading: questsLoading } = useQuests();
   const { data: allTasks = EMPTY_ARRAY } = useTasks();
@@ -167,11 +163,9 @@ export function useQuestOrchestration({
   const completeQuest = useCallback(
     (quest: Quest, burstPos: BurstPos | null) => {
       setQuests((prev) => prev.map((q) => (q.id === quest.id ? { ...q, done: true } : q)));
-      onAwardProgress({ xp: quest.xp, coins: quest.coins, gems: quest.difficulty === 'S' ? 5 : 0 });
       if (burstPos && animationsEnabled) onBurst(burstPos);
-      onToast({ xp: quest.xp, coins: quest.coins });
     },
-    [animationsEnabled, onAwardProgress, onBurst, onToast],
+    [animationsEnabled, onBurst],
   );
 
   const handleToggleHabit = useCallback(
@@ -180,20 +174,10 @@ export function useQuestOrchestration({
       setHabitDoneMap((prev) => ({ ...prev, [habitId]: newDone }));
       toggleHabitLog({ habitId, date: todayDateStr, done: newDone });
       if (newDone) {
-        onAwardProgress({ xp: HABIT_XP, coins: HABIT_COINS });
         if (burstPos && animationsEnabled) onBurst(burstPos);
-        onToast({ xp: HABIT_XP, coins: HABIT_COINS });
       }
     },
-    [
-      habitDoneMap,
-      toggleHabitLog,
-      todayDateStr,
-      animationsEnabled,
-      onAwardProgress,
-      onBurst,
-      onToast,
-    ],
+    [habitDoneMap, toggleHabitLog, todayDateStr, animationsEnabled, onBurst],
   );
 
   const handleToggleTask = useCallback(
@@ -208,9 +192,7 @@ export function useQuestOrchestration({
         if (nextLogged && task?.status === 'todo')
           updateTask({ id: taskId, status: 'in_progress' });
         if (nextLogged) {
-          onAwardProgress({ xp: TASK_XP, coins: TASK_COINS });
           if (burstPos && animationsEnabled) onBurst(burstPos);
-          onToast({ xp: TASK_XP, coins: TASK_COINS });
         }
         return;
       }
@@ -219,9 +201,7 @@ export function useQuestOrchestration({
       setTaskDoneMap((prev) => ({ ...prev, [taskId]: newDone }));
       updateTask({ id: taskId, status: newDone ? 'done' : 'todo' });
       if (newDone) {
-        onAwardProgress({ xp: TASK_XP, coins: TASK_COINS });
         if (burstPos && animationsEnabled) onBurst(burstPos);
-        onToast({ xp: TASK_XP, coins: TASK_COINS });
       }
     },
     [
@@ -232,9 +212,7 @@ export function useQuestOrchestration({
       updateTask,
       todayDateStr,
       animationsEnabled,
-      onAwardProgress,
       onBurst,
-      onToast,
     ],
   );
 
