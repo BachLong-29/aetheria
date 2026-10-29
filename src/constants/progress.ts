@@ -14,6 +14,13 @@ export const S_QUEST_GEMS = 5;
 export const PENALTY_COMPLETE_XP = 50;
 export const PENALTY_COMPLETE_COINS = 10;
 
+/**
+ * The most xp a day's ordinary work (tasks, habits, quests) can pay. Past it the work still
+ * counts for the streak but pays nothing, so items made just to be ticked can't be farmed.
+ * Goals and penalties are one-off payouts and sit outside it.
+ */
+export const DAILY_XP_CAP = 1000;
+
 /** Each level needs this much more xp than the last. */
 export const LEVEL_XP_GROWTH = 1.3;
 

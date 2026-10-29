@@ -4,6 +4,7 @@ import type { NextRequest } from 'next/server';
 import { connectDB } from '@/libs/mongodb';
 import { getAuthUser } from '@/server/helpers/get-auth-user';
 import { GoalModel } from '@/server/models/goal.model';
+import { awardProgress } from '@/server/services/progress';
 import { asyncHandler, notFoundResponse, successResponse, unauthorizedResponse } from '@/server';
 import { validateBody } from '@/server/validate';
 import { serialize } from '../route';
@@ -79,7 +80,19 @@ export const PUT = asyncHandler(async (req: NextRequest, ctx) => {
 
   if (!goal) return notFoundResponse('Goal not found');
 
-  return successResponse(serialize(goal), 'Goal updated');
+  // Pays once ever: reopening a goal and finishing it again is not a second reward.
+  const reward =
+    goal.status === 'completed'
+      ? await awardProgress(user.sub, {
+          kind: 'goal',
+          refId: goal._id.toString(),
+          date: 'once',
+          xp: goal.xp,
+          coins: goal.coins,
+        })
+      : null;
+
+  return successResponse(reward ? { ...serialize(goal), reward } : serialize(goal), 'Goal updated');
 });
 
 // DELETE /api/v1/goals/:id  (soft delete — sets active: false)

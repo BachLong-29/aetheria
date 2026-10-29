@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { queryKeys } from '@/constants/query-keys';
 import { goalEndpoints } from '@/services/endpoints/goals';
 
 export function useToggleMilestone() {
@@ -14,6 +15,8 @@ export function useToggleMilestone() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['goals'] });
+      // Finishing a goal pays xp and coins on the server.
+      queryClient.invalidateQueries({ queryKey: queryKeys.profile.all });
     },
   });
 }

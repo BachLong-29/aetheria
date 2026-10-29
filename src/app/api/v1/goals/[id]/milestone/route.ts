@@ -4,6 +4,7 @@ import type { NextRequest } from 'next/server';
 import { connectDB } from '@/libs/mongodb';
 import { getAuthUser } from '@/server/helpers/get-auth-user';
 import { GoalModel } from '@/server/models/goal.model';
+import { awardProgress } from '@/server/services/progress';
 import { asyncHandler, notFoundResponse, successResponse, unauthorizedResponse } from '@/server';
 import { validateBody } from '@/server/validate';
 import { serialize } from '../../route';
@@ -34,16 +35,19 @@ export const PATCH = asyncHandler(async (req: NextRequest, ctx) => {
   milestone.done = !milestone.done;
 
   const total = goal.milestones.length;
-  const done  = goal.milestones.filter((m) => m.done).length;
+  const done = goal.milestones.filter((m) => m.done).length;
   goal.progress = total ? done / total : 0;
 
   if (goal.progress >= 1) {
     if (goal.status !== 'completed') {
-      goal.status        = 'completed';
-      goal.completedDate = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      goal.status = 'completed';
+      goal.completedDate = new Date().toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+      });
     }
   } else if (goal.status === 'completed') {
-    goal.status        = 'in-progress';
+    goal.status = 'in-progress';
     goal.completedDate = undefined;
   } else if (goal.status === 'not-started' && done > 0) {
     goal.status = 'in-progress';
@@ -51,5 +55,20 @@ export const PATCH = asyncHandler(async (req: NextRequest, ctx) => {
 
   await goal.save();
 
-  return successResponse(serialize(goal), 'Milestone toggled');
+  // The last milestone completes the goal, which pays like marking it completed does.
+  const reward =
+    goal.status === 'completed'
+      ? await awardProgress(user.sub, {
+          kind: 'goal',
+          refId: goal._id.toString(),
+          date: 'once',
+          xp: goal.xp,
+          coins: goal.coins,
+        })
+      : null;
+
+  return successResponse(
+    reward ? { ...serialize(goal), reward } : serialize(goal),
+    'Milestone toggled',
+  );
 });
