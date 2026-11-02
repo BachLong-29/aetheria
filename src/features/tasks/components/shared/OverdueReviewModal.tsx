@@ -253,6 +253,7 @@ interface RescheduleAllBarProps {
 
 function RescheduleAllBar({ items, onRemoveItem, onNeedsScheduleUpdate }: RescheduleAllBarProps) {
   const t = useTranslations('tasks');
+  const tCommon = useTranslations('common');
   const { rescheduleAll, isPending } = useRescheduleAllOverdue();
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState<Date | null>(null);
@@ -284,7 +285,7 @@ function RescheduleAllBar({ items, onRemoveItem, onNeedsScheduleUpdate }: Resche
       <Button
         variant="ghost"
         onClick={() => setOpen(true)}
-        className="w-full justify-center sm:w-auto"
+        className="min-w-0 flex-1 justify-center"
       >
         {t('overdueReview.rescheduleAll')}
       </Button>
@@ -292,40 +293,24 @@ function RescheduleAllBar({ items, onRemoveItem, onNeedsScheduleUpdate }: Resche
   }
 
   return (
-    <div className="flex w-full flex-col gap-2">
-      <p className="text-[10px] text-[var(--text-lo)]">
+    <div className="flex w-full basis-full flex-col gap-3 rounded-[var(--r-md)] border border-[var(--border)] bg-[var(--bg-2)] p-3">
+      <p className="text-[11px] text-[var(--text-mid)]">
         {t('overdueReview.rescheduleAllHint', { count: items.length })}
       </p>
-      <div className="flex items-end gap-2">
-        <div className="flex-1">
-          <DatePicker
-            label={t('overdueReview.newDate')}
-            value={date}
-            onChange={setDate}
-            onClear={() => setDate(null)}
-            minDate={new Date()}
-          />
-        </div>
+      <DatePicker
+        label={t('overdueReview.newDate')}
+        value={date}
+        onChange={setDate}
+        onClear={() => setDate(null)}
+        minDate={new Date()}
+      />
+      {failedCount > 0 && (
+        <p className="text-[10px] text-[var(--rose)]">
+          ✕ {t('overdueReview.rescheduleAllFailed', { count: failedCount })}
+        </p>
+      )}
+      <div className="grid grid-cols-3 gap-2">
         <Button
-          size="sm"
-          variant="primary"
-          onClick={() => date && apply(date)}
-          disabled={!date || isPending}
-          className="h-[42px]"
-        >
-          {isPending ? '…' : t('overdueReview.set')}
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => apply(new Date())}
-          disabled={isPending}
-          className="h-[42px]"
-        >
-          {t('overdueReview.today')}
-        </Button>
-        <Button
-          size="sm"
           variant="ghost"
           onClick={() => {
             setOpen(false);
@@ -333,16 +318,27 @@ function RescheduleAllBar({ items, onRemoveItem, onNeedsScheduleUpdate }: Resche
             setFailedCount(0);
           }}
           disabled={isPending}
-          className="h-[42px]"
+          className="w-full min-w-0 justify-center"
         >
-          ✕
+          {tCommon('cancel')}
+        </Button>
+        <Button
+          variant="ghost"
+          onClick={() => setDate(new Date())}
+          disabled={isPending}
+          className="w-full min-w-0 justify-center"
+        >
+          {t('overdueReview.today')}
+        </Button>
+        <Button
+          variant="primary"
+          onClick={() => date && apply(date)}
+          disabled={!date || isPending}
+          className="w-full min-w-0 justify-center"
+        >
+          {isPending ? '…' : t('overdueReview.set')}
         </Button>
       </div>
-      {failedCount > 0 && (
-        <p className="text-[10px] text-[var(--rose)]">
-          ✕ {t('overdueReview.rescheduleAllFailed', { count: failedCount })}
-        </p>
-      )}
     </div>
   );
 }
@@ -399,7 +395,7 @@ export function OverdueReviewModal({ open, items, onRemoveItem, onDismiss }: Pro
         </ModalBody>
 
         <ModalFoot>
-          <div className="flex flex-col items-stretch gap-2 w-full sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex w-full flex-wrap items-center gap-2">
             {!allDone && items.length > 1 && (
               <RescheduleAllBar
                 items={items}
@@ -408,9 +404,15 @@ export function OverdueReviewModal({ open, items, onRemoveItem, onDismiss }: Pro
               />
             )}
             {!allDone && items.length <= 1 && (
-              <p className="text-[10px] text-[var(--text-lo)]">{t('overdueReview.reviewHint')}</p>
+              <p className="flex-1 text-[10px] text-[var(--text-lo)]">
+                {t('overdueReview.reviewHint')}
+              </p>
             )}
-            <Button variant="ghost" onClick={onDismiss} className="self-end sm:self-auto">
+            <Button
+              variant="ghost"
+              onClick={onDismiss}
+              className={cn('min-w-0 justify-center', items.length > 1 ? 'flex-1' : 'ml-auto')}
+            >
               {t('overdueReview.dismiss')}
             </Button>
           </div>
