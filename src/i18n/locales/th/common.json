@@ -891,7 +891,12 @@
       "yesAbandon": "ใช่ ละทิ้ง",
       "reviewHint": "ตรวจสอบแต่ละเควสต์เพื่อให้ความคืบหน้าของคุณยังไปต่อได้",
       "dismiss": "ปิด",
-      "later": "ไว้ทีหลัง"
+      "later": "ไว้ทีหลัง",
+      "rescheduleAll": "↺ เลื่อนทั้งหมด",
+      "rescheduleAllHint": "เลื่อนทั้ง {count} เควสต์ไปวันเดียว",
+      "today": "วันนี้",
+      "rescheduleAllFailed": "เลื่อน {count} เควสต์ไม่สำเร็จ ยังอยู่ในรายการ ลองอีกครั้ง",
+      "bulkSessionMessage": "<strong>{count} เซสชันที่จัดตาราง</strong>ของ {tasks} เควสต์ยังอยู่ในวันเดิม"
     }
   },
   "events": {

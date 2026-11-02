@@ -891,7 +891,12 @@
       "yesAbandon": "Yes, abandon",
       "reviewHint": "Review each quest to keep your progress on track.",
       "dismiss": "Dismiss",
-      "later": "Later"
+      "later": "Later",
+      "rescheduleAll": "↺ Reschedule all",
+      "rescheduleAllHint": "Move all {count} quests to one date",
+      "today": "Today",
+      "rescheduleAllFailed": "{count} quests could not be moved. They are still listed — try again.",
+      "bulkSessionMessage": "<strong>{count} scheduled sessions</strong> from {tasks} quests are still on their old days."
     }
   },
   "events": {

@@ -18,6 +18,12 @@ export interface SessionUpdateTarget {
    * so the shortcut is hidden.
    */
   dateMoved: boolean;
+  /**
+   * Set when the blocks belong to several tasks moved together. The message
+   * switches to the bulk wording and the planner shortcut is hidden — it only
+   * opens one task at a time.
+   */
+  bulkTaskCount?: number;
 }
 
 interface Props {
@@ -62,10 +68,16 @@ export function SessionUpdatePrompt({ target, onClose, onManage }: Props) {
       <ModalHead title={`⚡ ${t('editModal.blockWarning.title')}`} />
       <ModalBody>
         <p className="text-[12px] text-[var(--text-hi)] leading-relaxed">
-          {t.rich('editModal.blockWarning.message', {
-            count: target?.blockIds.length ?? 0,
-            strong: (chunks) => <strong>{chunks}</strong>,
-          })}
+          {target?.bulkTaskCount
+            ? t.rich('overdueReview.bulkSessionMessage', {
+                count: target.blockIds.length,
+                tasks: target.bulkTaskCount,
+                strong: (chunks) => <strong>{chunks}</strong>,
+              })
+            : t.rich('editModal.blockWarning.message', {
+                count: target?.blockIds.length ?? 0,
+                strong: (chunks) => <strong>{chunks}</strong>,
+              })}
         </p>
         {failed && (
           <p className="mt-2 text-[11px] text-[var(--rose)]">
@@ -92,18 +104,20 @@ export function SessionUpdatePrompt({ target, onClose, onManage }: Props) {
                 : t('editModal.blockWarning.moveToDate', { date: target.plannerData.startDate })}
             </Button>
           )}
-          <Button
-            variant="ghost"
-            onClick={() => {
-              const data = target?.plannerData ?? null;
-              close();
-              if (data) onManage(data);
-            }}
-            disabled={moving}
-            className="w-full justify-center"
-          >
-            {t('editModal.manageSchedule')}
-          </Button>
+          {!target?.bulkTaskCount && (
+            <Button
+              variant="ghost"
+              onClick={() => {
+                const data = target?.plannerData ?? null;
+                close();
+                if (data) onManage(data);
+              }}
+              disabled={moving}
+              className="w-full justify-center"
+            >
+              {t('editModal.manageSchedule')}
+            </Button>
+          )}
           <Button
             variant="ghost"
             onClick={close}

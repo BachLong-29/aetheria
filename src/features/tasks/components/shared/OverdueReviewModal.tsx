@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { useUpdateTask } from '@/features/dashboard/hooks/useUpdateTask';
 import { SessionPlanner, type PlannerTask } from '@/features/schedule/components/SessionPlanner';
+import { useRescheduleAllOverdue } from '../../hooks/useRescheduleAllOverdue';
 import { useTaskBlocks } from '@/features/schedule/hooks/useScheduleBlocks';
 import { cn } from '@/libs/utils';
 
@@ -242,6 +243,110 @@ function OverdueRow({ item, onRemove, onNeedsScheduleUpdate }: OverdueRowProps) 
   );
 }
 
+// ─── Reschedule-all bar ───────────────────────────────────────────────────────
+
+interface RescheduleAllBarProps {
+  items: OverdueItem[];
+  onRemoveItem: (taskId: string) => void;
+  onNeedsScheduleUpdate: (target: SessionUpdateTarget) => void;
+}
+
+function RescheduleAllBar({ items, onRemoveItem, onNeedsScheduleUpdate }: RescheduleAllBarProps) {
+  const t = useTranslations('tasks');
+  const { rescheduleAll, isPending } = useRescheduleAllOverdue();
+  const [open, setOpen] = useState(false);
+  const [date, setDate] = useState<Date | null>(null);
+  const [failedCount, setFailedCount] = useState(0);
+
+  async function apply(target: Date) {
+    const newStartDate = toLocalDate(target);
+    const result = await rescheduleAll(items, newStartDate);
+    result.movedIds.forEach(onRemoveItem);
+    setFailedCount(result.failedCount);
+    if (result.failedCount === 0) {
+      setOpen(false);
+      setDate(null);
+    }
+    if (result.blockIds.length > 0) {
+      const first = items.find((i) => i.id === result.movedIds[0]);
+      if (!first) return;
+      onNeedsScheduleUpdate({
+        blockIds: result.blockIds,
+        dateMoved: true,
+        bulkTaskCount: result.movedIds.length,
+        plannerData: { id: first.id, name: first.name, startDate: newStartDate },
+      });
+    }
+  }
+
+  if (!open) {
+    return (
+      <Button
+        variant="ghost"
+        onClick={() => setOpen(true)}
+        className="w-full justify-center sm:w-auto"
+      >
+        {t('overdueReview.rescheduleAll')}
+      </Button>
+    );
+  }
+
+  return (
+    <div className="flex w-full flex-col gap-2">
+      <p className="text-[10px] text-[var(--text-lo)]">
+        {t('overdueReview.rescheduleAllHint', { count: items.length })}
+      </p>
+      <div className="flex items-end gap-2">
+        <div className="flex-1">
+          <DatePicker
+            label={t('overdueReview.newDate')}
+            value={date}
+            onChange={setDate}
+            onClear={() => setDate(null)}
+            minDate={new Date()}
+          />
+        </div>
+        <Button
+          size="sm"
+          variant="primary"
+          onClick={() => date && apply(date)}
+          disabled={!date || isPending}
+          className="h-[42px]"
+        >
+          {isPending ? '…' : t('overdueReview.set')}
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => apply(new Date())}
+          disabled={isPending}
+          className="h-[42px]"
+        >
+          {t('overdueReview.today')}
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => {
+            setOpen(false);
+            setDate(null);
+            setFailedCount(0);
+          }}
+          disabled={isPending}
+          className="h-[42px]"
+        >
+          ✕
+        </Button>
+      </div>
+      {failedCount > 0 && (
+        <p className="text-[10px] text-[var(--rose)]">
+          ✕ {t('overdueReview.rescheduleAllFailed', { count: failedCount })}
+        </p>
+      )}
+    </div>
+  );
+}
+
 // ─── Modal ────────────────────────────────────────────────────────────────────
 
 export function OverdueReviewModal({ open, items, onRemoveItem, onDismiss }: Props) {
@@ -295,7 +400,14 @@ export function OverdueReviewModal({ open, items, onRemoveItem, onDismiss }: Pro
 
         <ModalFoot>
           <div className="flex flex-col items-stretch gap-2 w-full sm:flex-row sm:items-center sm:justify-between">
-            {!allDone && (
+            {!allDone && items.length > 1 && (
+              <RescheduleAllBar
+                items={items}
+                onRemoveItem={onRemoveItem}
+                onNeedsScheduleUpdate={setBlockWarning}
+              />
+            )}
+            {!allDone && items.length <= 1 && (
               <p className="text-[10px] text-[var(--text-lo)]">{t('overdueReview.reviewHint')}</p>
             )}
             <Button variant="ghost" onClick={onDismiss} className="self-end sm:self-auto">

@@ -891,7 +891,12 @@
       "yesAbandon": "Có, bỏ đi",
       "reviewHint": "Hãy rà từng quest để giữ tiến độ của bạn đi đúng hướng.",
       "dismiss": "Đóng",
-      "later": "Để sau"
+      "later": "Để sau",
+      "rescheduleAll": "↺ Dời tất cả",
+      "rescheduleAllHint": "Dời cả {count} quest sang một ngày",
+      "today": "Hôm nay",
+      "rescheduleAllFailed": "{count} quest chưa dời được. Chúng vẫn còn trong danh sách — thử lại nhé.",
+      "bulkSessionMessage": "<strong>{count} phiên đã lên lịch</strong> của {tasks} quest vẫn đang ở ngày cũ."
     }
   },
   "events": {
