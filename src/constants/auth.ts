@@ -16,4 +16,15 @@ export const AUTH_ROUTES = {
   FORGOT_PASSWORD: '/forgot-password',
 } as const;
 
-export const PROTECTED_ROUTES = ['/dashboard', '/marketplace', '/projects'] as const;
+/**
+ * Pages anyone may open. Everything else needs a session — listing what is public rather than what
+ * is protected means a page added under `(protected)` can never be left unguarded by accident.
+ */
+export const PUBLIC_ROUTES = [
+  '/',
+  AUTH_ROUTES.LOGIN,
+  AUTH_ROUTES.REGISTER,
+  AUTH_ROUTES.FORGOT_PASSWORD,
+] as const;
+
+export const DEFAULT_AFTER_LOGIN = '/dashboard';

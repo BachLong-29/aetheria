@@ -1,7 +1,7 @@
 import createMiddleware from 'next-intl/middleware';
 import { type NextRequest, NextResponse } from 'next/server';
 
-import { AUTH_ROUTES, PROTECTED_ROUTES, TOKEN_KEYS, TOKEN_MAX_AGE } from '@/constants/auth';
+import { AUTH_ROUTES, PUBLIC_ROUTES, TOKEN_KEYS, TOKEN_MAX_AGE } from '@/constants/auth';
 import { routing } from '@/i18n/routing';
 
 const handleI18n = createMiddleware(routing);
@@ -32,7 +32,8 @@ function getLocale(pathname: string): string {
 }
 
 function isProtectedRoute(pathname: string): boolean {
-  return PROTECTED_ROUTES.some((route) => pathname.startsWith(route));
+  const path = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
+  return !(PUBLIC_ROUTES as readonly string[]).includes(path);
 }
 
 interface IssuedTokens {
@@ -116,7 +117,8 @@ export default async function proxy(req: NextRequest): Promise<NextResponse> {
   // Unauthenticated user hitting a protected route → redirect to login
   if (isProtectedRoute(cleanPathname) && !token) {
     const loginUrl = new URL(`${localePrefix}${AUTH_ROUTES.LOGIN}`, req.url);
-    loginUrl.searchParams.set('callbackUrl', pathname);
+    // Without the locale prefix: the login page pushes it back through the locale-aware router.
+    loginUrl.searchParams.set('callbackUrl', `${cleanPathname}${req.nextUrl.search}`);
     return NextResponse.redirect(loginUrl);
   }
 

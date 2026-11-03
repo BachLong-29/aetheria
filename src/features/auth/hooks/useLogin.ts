@@ -10,6 +10,7 @@ import type { ApiResponse, AuthSession } from '@/types';
 
 import { useAuthStore } from '../stores/auth.store';
 import type { LoginFormValues } from '../schemas';
+import { getCallbackUrl } from '../utils';
 
 async function login(credentials: LoginFormValues): Promise<ApiResponse<AuthSession>> {
   const { data } = await apiClient.post<ApiResponse<AuthSession>>('/auth/login', credentials);
@@ -26,7 +27,7 @@ export function useLogin() {
       const { user, tokens } = data.data;
       setTokens(tokens.accessToken, tokens.refreshToken);
       setUser(user);
-      router.push('/dashboard');
+      router.push(getCallbackUrl());
     },
   });
 }
