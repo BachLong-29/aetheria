@@ -7,6 +7,7 @@ import {
   useUpdateScheduleBlock,
 } from '@/features/schedule/hooks/useScheduleBlocks';
 import {
+  formatDeadline,
   habitToUITask,
   isHabitScheduledForDate,
   questToUITask,
@@ -536,7 +537,7 @@ export function useScheduleDayTasks({
       habitRef: habitTask.sourceId,
       cancelled: false,
       done: false,
-      deadline: `Today · ${newTime}`,
+      deadline: `${formatDeadline(selectedDateStr)} · ${newTime}`,
     };
     setTasks((ts) => [
       ...ts.map((t) => (t.id === habitTask.id ? { ...t, cancelled: true } : t)),
@@ -548,7 +549,7 @@ export function useScheduleDayTasks({
         icon: habitTask.icon ?? '◉',
         color: (habitTask.color ?? 'gold') as TaskColor,
         tagId: habitTask.tagId ?? 'habit',
-        startDate: todayStr,
+        startDate: selectedDateStr,
         duration: habitTask.est,
         habitRef: habitTask.sourceId,
       },
@@ -558,7 +559,7 @@ export function useScheduleDayTasks({
             createBlock.mutate({
               sourceType: 'task',
               sourceId: created.id,
-              date: todayStr,
+              date: selectedDateStr,
               startTime: newTime,
               duration: habitTask.est ?? 30,
             });
