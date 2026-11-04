@@ -488,25 +488,6 @@ function CalendarHeatmap({
   );
 }
 
-// ── Range Control (decorative) ────────────────────────────────────────────────
-
-function RangeControl({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  return (
-    <div className={rangeCtl}>
-      {['7D', '30D', 'Season', 'All'].map((opt) => (
-        <button
-          key={opt}
-          type="button"
-          onClick={() => onChange(opt)}
-          className={cn(rangeBtn, value === opt && rangeBtnActive)}
-        >
-          {opt}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export function AnalyticsPanel() {
@@ -515,7 +496,6 @@ export function AnalyticsPanel() {
   const { data: allTasks = [] } = useTasks();
   const { mutate: updateTask, isPending: updatingTask } = useUpdateTask();
   const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [range, setRange] = useState('Season');
 
   const STATUS_ORDER: Record<string, number> = { in_progress: 0, todo: 1, pending: 2, waiting: 3 };
 
@@ -692,7 +672,6 @@ export function AnalyticsPanel() {
                 <span className="text-[10px] text-[var(--text-lo)]">Live</span>
               </div>
             </div>
-            <RangeControl value={range} onChange={setRange} />
           </header>
 
           {/* ── 01 · Headline Metrics ────────────────────────────────────────── */}
@@ -1133,16 +1112,6 @@ const pageTitleCls =
   'text-[44px] font-bold [font-family:var(--font-title)] leading-none tracking-[-0.02em] ' +
   'text-transparent bg-clip-text bg-gradient-to-r bg-[linear-gradient(135deg,var(--text-hi)_0%,var(--gold)_65%,var(--violet)_100%)]';
 const liveDotCls = 'inline-block w-1.5 h-1.5 rounded-full bg-[oklch(0.76_0.14_162)] animate-pulse';
-
-// Range control
-const rangeCtl =
-  'flex items-center gap-0.5 bg-[var(--panel2)] border border-[var(--border)] ' +
-  'rounded-[var(--r-pill)] p-0.5 shrink-0';
-const rangeBtn =
-  'px-2 py-1 text-[9px] font-bold [font-family:var(--f-mono)] tracking-[0.04em] rounded-[var(--r-pill)] ' +
-  'text-[var(--text-lo)] transition-all duration-150 hover:text-[var(--text-hi)]';
-const rangeBtnActive =
-  'bg-[var(--panel3)] text-[var(--gold)] border border-[oklch(0.74_0.17_85/0.3)]';
 
 // Rank badge in self improvement card
 const rankBadgeCls =
