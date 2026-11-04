@@ -11,19 +11,24 @@ const googleLoginSchema = z.object({
   credential: z.string().min(1, 'Missing Google credential'),
 });
 
-function getClient(): OAuth2Client {
+/**
+ * The one client ID this app signs in with. It is also the `audience` a token must carry: with no
+ * audience the library skips that check, and an ID token Google issued to some other app would be
+ * accepted for whatever email it names.
+ */
+function getClientId(): string {
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-  if (!clientId) throw new Error('GOOGLE_CLIENT_ID is not defined');
-  return new OAuth2Client(clientId);
+  if (!clientId) throw new Error('NEXT_PUBLIC_GOOGLE_CLIENT_ID is not defined');
+  return clientId;
 }
 
 export const POST = asyncHandler(async (req) => {
   const { data, error } = await validateBody(req, googleLoginSchema);
   if (error) return error;
 
-  const client = getClient();
-  const ticket = await client
-    .verifyIdToken({ idToken: data.credential, audience: process.env.GOOGLE_CLIENT_ID })
+  const clientId = getClientId();
+  const ticket = await new OAuth2Client(clientId)
+    .verifyIdToken({ idToken: data.credential, audience: clientId })
     .catch(() => null);
   const payload = ticket?.getPayload();
   if (!payload || !payload.email) return unauthorizedResponse('Invalid Google token');
