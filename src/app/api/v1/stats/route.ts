@@ -175,6 +175,9 @@ export const GET = asyncHandler(async (req: NextRequest) => {
   const trendMap = new Map<string, { planned: number; completed: number }>();
 
   for (const item of calItems) {
+    // An event is a reminder of where the time goes, not something to finish, so it
+    // would only ever sit in the planned total and drag the completion rate down.
+    if (item.sourceType === 'event') continue;
     plannedMin += item.duration;
     if (item.status === 'done') {
       completedMin += item.duration;
