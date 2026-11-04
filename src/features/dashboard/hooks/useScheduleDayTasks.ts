@@ -566,10 +566,11 @@ export function useScheduleDayTasks({
           }
         },
         onError: () => {
-          setTasks((ts) => [
-            ...ts.filter((t) => t.id !== tempId),
-            ...ts.map((t) => (t.id === habitTask.id ? { ...t, cancelled: false } : t)),
-          ]);
+          setTasks((ts) =>
+            ts
+              .filter((t) => t.id !== tempId)
+              .map((t) => (t.id === habitTask.id ? { ...t, cancelled: false } : t)),
+          );
         },
       },
     );
