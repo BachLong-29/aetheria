@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server';
 
 import { connectDB } from '@/libs/mongodb';
 import { getAuthUser } from '@/server/helpers/get-auth-user';
+import { setTaskBlocksDone } from '@/server/helpers/schedule-block.helpers';
 import { ScheduleBlockModel } from '@/server/models/schedule-block.model';
 import { TaskModel } from '@/server/models/task.model';
 import { awardProgress, todayKey } from '@/server/services/progress';
@@ -117,6 +118,13 @@ export const PATCH = asyncHandler(async (req: NextRequest, ctx) => {
   });
 
   if (!task) return notFoundResponse('Task not found');
+
+  // A multi-day task is ticked a day at a time through its logs, which mark that day's
+  // sessions; only a single-day task's status stands for all of its sessions.
+  const multiDay = !!task.startDate && !!task.endDate && task.endDate > task.startDate;
+  if (data.status !== undefined && !multiDay) {
+    await setTaskBlocksDone(user.sub, task._id, data.status === 'done');
+  }
 
   // The ledger makes finishing pay once a day however many times the status flips.
   const reward =

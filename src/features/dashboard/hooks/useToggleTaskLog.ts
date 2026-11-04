@@ -17,6 +17,10 @@ export function useToggleTaskLog() {
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['task-logs', variables.date] });
+      // The server marks that day's sessions done (or planned again), which moves task progress.
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.scheduleBlocks.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.calendar.all });
       // The server pays xp and coins when this lands, so the hero panel is stale until it reloads.
       queryClient.invalidateQueries({ queryKey: queryKeys.profile.all });
     },

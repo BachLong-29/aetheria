@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server';
 
 import { connectDB } from '@/libs/mongodb';
 import { getAuthUser } from '@/server/helpers/get-auth-user';
+import { setTaskBlocksDone } from '@/server/helpers/schedule-block.helpers';
 import { TaskLogModel, type ITaskLog } from '@/server/models/task-log.model';
 import { awardProgress } from '@/server/services/progress';
 import { asyncHandler, successResponse, unauthorizedResponse } from '@/server';
@@ -83,6 +84,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
   // Toggle: remove if exists, create if not
   if (existing) {
     await existing.deleteOne();
+    await setTaskBlocksDone(user.sub, data.taskId, false, data.date);
     return successResponse(null, 'Task log removed');
   }
 
@@ -92,6 +94,8 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     date: start,
     note: data.note,
   });
+
+  await setTaskBlocksDone(user.sub, data.taskId, true, data.date);
 
   // A day's log pays that day once; removing it and logging again does not pay twice.
   const reward = await awardProgress(user.sub, {

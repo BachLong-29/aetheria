@@ -61,3 +61,34 @@ export function toTaskProgress(
       : null;
   return { plannedMinutes, completedMinutes, progressPct };
 }
+
+/**
+ * Mirror a tick onto the task's sessions: `done` blocks count toward progress, so a
+ * tick that never reached them left every task at 0%. With `date` only that day's
+ * blocks change (a multi-day task ticked once a day); without it, all of them.
+ * Un-ticking sends `done` back to `planned` and leaves `missed` alone.
+ */
+export async function setTaskBlocksDone(
+  userId: IdLike,
+  taskId: IdLike,
+  done: boolean,
+  date?: string,
+): Promise<void> {
+  const filter = {
+    userId,
+    sourceType: 'task' as const,
+    sourceId: taskId,
+    ...(date ? { date: new Date(date) } : {}),
+  };
+  if (done) {
+    await ScheduleBlockModel.updateMany(
+      { ...filter, status: { $ne: 'done' } },
+      { $set: { status: 'done' } },
+    );
+  } else {
+    await ScheduleBlockModel.updateMany(
+      { ...filter, status: 'done' },
+      { $set: { status: 'planned' } },
+    );
+  }
+}
