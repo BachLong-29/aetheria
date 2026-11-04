@@ -544,7 +544,7 @@ export function useScheduleDayTasks({
     ]);
     createTask.mutate(
       {
-        name: habitTask.title.replace(/^\S+\s+/, ''),
+        name: habitTask.title,
         icon: habitTask.icon ?? '◉',
         color: (habitTask.color ?? 'gold') as TaskColor,
         tagId: habitTask.tagId ?? 'habit',

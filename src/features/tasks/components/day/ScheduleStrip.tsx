@@ -250,7 +250,7 @@ function ScheduleRow({ entry, isLast }: { entry: ScheduleEntry; isLast: boolean 
         <div className="flex items-center gap-1 min-w-0">
           {entry.icon && <Icon icon={entry.icon} className="text-[11px] shrink-0 leading-none" />}
           <span className="text-[10px] text-[var(--text-hi)] font-medium truncate">
-            {entry.icon ? entry.label.replace(/^\S+\s/, '') : entry.label}
+            {entry.label}
           </span>
         </div>
         <div className="text-[8px] mt-[1px] flex items-center gap-1.5">

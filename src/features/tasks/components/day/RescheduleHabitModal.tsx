@@ -58,7 +58,7 @@ export function RescheduleHabitModal({
 
   const activeTime = useCustom ? customTime : selectedTime;
 
-  const habitName = task.title.replace(/^\S+\s/, '');
+  const habitName = task.title;
 
   function handleConfirm() {
     const time = activeTime.trim();
