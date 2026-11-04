@@ -64,11 +64,13 @@ export function GoogleSignInButton({ onError }: GoogleSignInButtonProps) {
           onError?.();
         },
       });
-      window.google.accounts.id.renderButton(overlayRef.current, {
-        type: 'icon',
-        shape: 'circle',
+      // A wide standard button, scaled up in the overlay below, so Google's iframe
+      // covers the whole stone — the icon variant is only 40px and left the rest dead.
+      window.google.accounts.id.renderButton(overlayRef.current.firstElementChild as HTMLElement, {
+        type: 'standard',
         theme: 'outline',
         size: 'large',
+        width: 400,
       });
       buttonReady.current = true;
     } catch (err) {
@@ -102,7 +104,9 @@ export function GoogleSignInButton({ onError }: GoogleSignInButtonProps) {
       <Script
         src="https://accounts.google.com/gsi/client"
         strategy="afterInteractive"
-        onLoad={() => setScriptReady(true)}
+        // onReady (not onLoad) also fires when the script is already on the page, e.g. after
+        // client-side navigation back to this screen
+        onReady={() => setScriptReady(true)}
         onError={() => {
           console.error('Failed to load https://accounts.google.com/gsi/client');
           onError?.();
@@ -129,7 +133,9 @@ export function GoogleSignInButton({ onError }: GoogleSignInButtonProps) {
       <div
         ref={overlayRef}
         className="absolute inset-0 flex items-center justify-center overflow-hidden opacity-0"
-      />
+      >
+        <div className="shrink-0 scale-[1.4]" />
+      </div>
     </div>
   );
 }
