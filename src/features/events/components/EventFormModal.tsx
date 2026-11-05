@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 import { Icon } from '@/components/common/Icon';
 import { IconPickerSheet } from '@/components/common/IconPickerSheet';
@@ -17,7 +18,7 @@ import { cn } from '@/libs/utils';
 import type { EventDTO, EventFrequency, TaskColor } from '@/types';
 import type { HabitDay } from '@/types/habit';
 
-import { DAY_ORDER, DEFAULT_EVENT_ICON, WEEKDAYS } from '../constants';
+import { DAY_ORDER, DEFAULT_EVENT_ICON } from '../constants';
 import { useCreateEvent, useUpdateEvent } from '../hooks/useEvents';
 
 /** `startDate` travels as a plain "YYYY-MM-DD" string, so convert at the edges. */
@@ -44,6 +45,8 @@ interface Props {
 }
 
 export function EventFormModal({ open, onClose, event }: Props) {
+  const t = useTranslations('events');
+  const tc = useTranslations('common');
   const isEdit = Boolean(event);
   const { data: categories = [] } = useCategories();
   const createEvent = useCreateEvent();
@@ -109,11 +112,11 @@ export function EventFormModal({ open, onClose, event }: Props) {
   /** Mirrors the zod schema in src/app/api/v1/events/route.ts — keep in sync. */
   function validate(): FormErrors {
     const found: FormErrors = {};
-    if (!title.trim()) found.title = 'Title is required';
-    if (!tagId) found.tagId = 'Category is required';
-    if (!startDate) found.startDate = 'Start date is required';
-    if (!allDay && (!startTime || !Number(duration))) found.time = 'Time and length are required';
-    if (repeats && freq === 'weekly' && days.length === 0) found.days = 'Pick at least one day';
+    if (!title.trim()) found.title = t('form.errors.title');
+    if (!tagId) found.tagId = t('form.errors.category');
+    if (!startDate) found.startDate = t('form.errors.startDate');
+    if (!allDay && (!startTime || !Number(duration))) found.time = t('form.errors.time');
+    if (repeats && freq === 'weekly' && days.length === 0) found.days = t('form.errors.days');
     return found;
   }
 
@@ -175,9 +178,12 @@ export function EventFormModal({ open, onClose, event }: Props) {
 
   return (
     <Modal open={open} onClose={onClose} maxWidth="480px" scrollable>
-      <ModalHead tag="SCHEDULE" title={isEdit ? '📅 Edit Event' : '📅 New Event'} />
+      <ModalHead
+        tag={t('page.eyebrow')}
+        title={`📅 ${isEdit ? t('form.titleEdit') : t('form.titleNew')}`}
+      />
       <ModalBody scrollable className="flex flex-col gap-4">
-        <Field label="Icon">
+        <Field label={t('form.icon')}>
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -196,13 +202,11 @@ export function EventFormModal({ open, onClose, event }: Props) {
             </button>
           </div>
           {isUploadedIcon(icon) && (
-            <p className="text-[9px] text-[var(--text-lo)]">
-              Uploaded image — shown at icon size, so keep it simple.
-            </p>
+            <p className="text-[9px] text-[var(--text-lo)]">{t('form.uploadedHint')}</p>
           )}
           {showPicker && (
             <IconPickerSheet
-              title="Icon"
+              title={t('form.icon')}
               value={icon}
               onChange={setIcon}
               onClose={() => setShowPicker(false)}
@@ -210,7 +214,7 @@ export function EventFormModal({ open, onClose, event }: Props) {
           )}
         </Field>
 
-        <Field label="Title" required error={errors.title}>
+        <Field label={t('form.title')} required error={errors.title}>
           <Input
             autoFocus
             value={title}
@@ -218,21 +222,21 @@ export function EventFormModal({ open, onClose, event }: Props) {
               setTitle(e.target.value);
               clearError('title');
             }}
-            placeholder="e.g. Team standup"
+            placeholder={t('form.titlePlaceholder')}
             disabled={saving}
           />
         </Field>
 
-        <Field label="Note">
+        <Field label={t('form.note')}>
           <Input
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="Anything worth remembering…"
+            placeholder={t('form.notePlaceholder')}
             disabled={saving}
           />
         </Field>
 
-        <Field label="Category" required error={errors.tagId}>
+        <Field label={t('form.category')} required error={errors.tagId}>
           <Select
             options={categoryOptions}
             value={tagId}
@@ -240,19 +244,19 @@ export function EventFormModal({ open, onClose, event }: Props) {
               setTagId(v);
               clearError('tagId');
             }}
-            placeholder="Pick a category"
+            placeholder={t('form.categoryPlaceholder')}
             disabled={saving}
           />
         </Field>
 
         {/* Seven swatches need the full width — halved they wrap onto two rows. */}
-        <Field label="Colour">
+        <Field label={t('form.colour')}>
           <div className="flex flex-wrap gap-2">
             {COLOR_OPTIONS.map((opt) => (
               <button
                 key={opt.value}
                 type="button"
-                aria-label={opt.label}
+                aria-label={t(`colors.${opt.value}`)}
                 aria-pressed={color === opt.value}
                 onClick={() => setColor(opt.value)}
                 className={cn(
@@ -267,7 +271,11 @@ export function EventFormModal({ open, onClose, event }: Props) {
           </div>
         </Field>
 
-        <Field label={repeats ? 'Starts on' : 'Date'} required error={errors.startDate}>
+        <Field
+          label={repeats ? t('form.startsOn') : t('form.date')}
+          required
+          error={errors.startDate}
+        >
           <DatePicker
             value={startDate ? parseDateString(startDate) : null}
             onChange={(d) => {
@@ -279,11 +287,11 @@ export function EventFormModal({ open, onClose, event }: Props) {
         </Field>
 
         <Switch checked={allDay} onChange={setAllDay} disabled={saving}>
-          All day
+          {t('form.allDay')}
         </Switch>
 
         {!allDay && (
-          <Field label="Time" error={errors.time}>
+          <Field label={t('form.time')} error={errors.time}>
             <div className="grid grid-cols-2 gap-3">
               <Input
                 type="time"
@@ -303,7 +311,7 @@ export function EventFormModal({ open, onClose, event }: Props) {
                   setDuration(e.target.value);
                   clearError('time');
                 }}
-                placeholder="Minutes"
+                placeholder={t('form.minutes')}
                 disabled={saving}
               />
             </div>
@@ -311,24 +319,24 @@ export function EventFormModal({ open, onClose, event }: Props) {
         )}
 
         <Switch checked={repeats} onChange={setRepeats} disabled={saving}>
-          Repeats
+          {t('form.repeats')}
         </Switch>
 
         {repeats && (
           <div className="flex flex-col gap-3 rounded-[var(--r-sm)] border border-[var(--border)] bg-[var(--bg-2)] p-3">
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Frequency">
+              <Field label={t('form.frequency')}>
                 <Select
                   options={[
-                    { value: 'weekly', label: 'Weekly' },
-                    { value: 'monthly', label: 'Monthly' },
+                    { value: 'weekly', label: t('schedule.weekly') },
+                    { value: 'monthly', label: t('schedule.monthly') },
                   ]}
                   value={freq}
                   onValueChange={(v) => setFreq(v as EventFrequency)}
                   disabled={saving}
                 />
               </Field>
-              <Field label={freq === 'weekly' ? 'Every N weeks' : 'Every N months'}>
+              <Field label={freq === 'weekly' ? t('form.everyNWeeks') : t('form.everyNMonths')}>
                 <Input
                   type="number"
                   min={1}
@@ -341,30 +349,30 @@ export function EventFormModal({ open, onClose, event }: Props) {
             </div>
 
             {freq === 'weekly' ? (
-              <Field label="On days" required error={errors.days}>
+              <Field label={t('form.onDays')} required error={errors.days}>
                 <div className="flex gap-1">
-                  {WEEKDAYS.map((d) => (
+                  {DAY_ORDER.map((day) => (
                     <button
-                      key={d.value}
+                      key={day}
                       type="button"
-                      aria-label={d.value}
-                      aria-pressed={days.includes(d.value)}
-                      onClick={() => toggleDay(d.value)}
+                      aria-label={t(`days.${day}`)}
+                      aria-pressed={days.includes(day)}
+                      onClick={() => toggleDay(day)}
                       disabled={saving}
                       className={cn(
                         'flex-1 rounded-[var(--r-sm)] border py-1.5 text-[11px] font-bold transition-colors',
-                        days.includes(d.value)
+                        days.includes(day)
                           ? 'border-[var(--gold)] bg-[oklch(0.74_0.17_85_/_0.15)] text-[var(--gold)]'
                           : 'border-[var(--border)] text-[var(--text-lo)] hover:text-[var(--text-mid)]',
                       )}
                     >
-                      {d.label}
+                      {t(`dayLetters.${day}`)}
                     </button>
                   ))}
                 </div>
               </Field>
             ) : (
-              <Field label="Day of month">
+              <Field label={t('form.dayOfMonth')}>
                 <Input
                   type="number"
                   min={1}
@@ -373,18 +381,16 @@ export function EventFormModal({ open, onClose, event }: Props) {
                   onChange={(e) => setDayOfMonth(e.target.value)}
                   disabled={saving}
                 />
-                <p className="mt-1 text-[10px] text-[var(--text-lo)]">
-                  A day past the end of a month lands on its last day.
-                </p>
+                <p className="mt-1 text-[10px] text-[var(--text-lo)]">{t('form.dayOfMonthHint')}</p>
               </Field>
             )}
 
-            <Field label="Ends on">
+            <Field label={t('form.endsOn')}>
               <DatePicker
                 value={endDate ? parseDateString(endDate) : null}
                 onChange={(d) => setEndDate(toDateString(d))}
                 onClear={() => setEndDate('')}
-                placeholder="Never"
+                placeholder={t('form.never')}
                 disabled={saving}
               />
             </Field>
@@ -392,24 +398,22 @@ export function EventFormModal({ open, onClose, event }: Props) {
         )}
 
         <Switch checked={busy} onChange={setBusy} disabled={saving}>
-          Takes up my time
+          {t('form.busy')}
         </Switch>
-        <p className="-mt-2 text-[10px] text-[var(--text-lo)]">
-          Off keeps it on the calendar without spending the day&apos;s capacity.
-        </p>
+        <p className="-mt-2 text-[10px] text-[var(--text-lo)]">{t('form.busyHint')}</p>
 
         {saveFailed && (
           <p role="alert" className="text-[11px] text-[var(--rose)]">
-            ✕ Could not save the event. Try again.
+            ✕ {t('form.saveFailed')}
           </p>
         )}
       </ModalBody>
       <ModalFoot>
         <Button variant="ghost" onClick={onClose} disabled={saving}>
-          Cancel
+          {tc('cancel')}
         </Button>
         <Button variant="primary" onClick={handleSave} disabled={saving}>
-          {saving ? '…' : isEdit ? 'Save Changes' : 'Create Event'}
+          {saving ? '…' : isEdit ? t('form.saveChanges') : t('form.create')}
         </Button>
       </ModalFoot>
     </Modal>

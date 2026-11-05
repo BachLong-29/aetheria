@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 
 import { Icon } from '@/components/common/Icon';
 import { Badge } from '@/components/ui/Badge';
@@ -20,36 +21,38 @@ import { COLOR_CSS } from '@/features/projects/constants';
 import { cn } from '@/libs/utils';
 import type { EventDTO } from '@/types';
 
-import { DAY_ORDER, DAY_SHORT } from '../constants';
+import { DAY_ORDER } from '../constants';
 import { useDeleteEvent, useEventOccurrences, useEvents, useUpdateEvent } from '../hooks/useEvents';
 import { isEventLive, LIVE_TICK_MS } from '../utils/live';
 import { EventFormModal } from './EventFormModal';
 
 /** "Every 2 weeks · Mon, Wed · 09:00" — one line that says when it happens. */
-function scheduleLabel(event: EventDTO): string {
-  const time = event.allDay ? 'All day' : (event.startTime ?? '');
+function scheduleLabel(event: EventDTO, t: ReturnType<typeof useTranslations>): string {
+  const time = event.allDay ? t('schedule.allDay') : (event.startTime ?? '');
   const rule = event.recurrence;
 
   if (!rule) return [event.startDate, time].filter(Boolean).join(' · ');
 
   const every =
     rule.interval > 1
-      ? `Every ${rule.interval} ${rule.freq === 'weekly' ? 'weeks' : 'months'}`
-      : rule.freq === 'weekly'
-        ? 'Weekly'
-        : 'Monthly';
+      ? t(rule.freq === 'weekly' ? 'schedule.everyWeeks' : 'schedule.everyMonths', {
+          count: rule.interval,
+        })
+      : t(rule.freq === 'weekly' ? 'schedule.weekly' : 'schedule.monthly');
 
   const when =
     rule.freq === 'weekly'
       ? DAY_ORDER.filter((d) => rule.days?.includes(d))
-          .map((d) => DAY_SHORT[d])
+          .map((d) => t(`days.${d}`))
           .join(', ')
-      : `Day ${rule.dayOfMonth}`;
+      : t('schedule.dayOfMonth', { day: rule.dayOfMonth ?? 1 });
 
   return [every, when, time].filter(Boolean).join(' · ');
 }
 
 export function EventsPage() {
+  const t = useTranslations('events');
+  const tc = useTranslations('common');
   // ── Character snapshot for the shared app topbar — same pattern as RewardManagement ──
   const { data: profileData } = useProfile();
   const charInitialized = useRef(false);
@@ -139,10 +142,10 @@ export function EventsPage() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="min-w-0 sm:flex-1">
             <div className="text-[9px] tracking-[0.3em] text-[var(--gold)] [font-family:var(--f-title)]">
-              SCHEDULE
+              {t('page.eyebrow')}
             </div>
             <h1 className="truncate text-[22px] font-bold tracking-[0.03em] text-[var(--text-hi)] [font-family:var(--f-title)]">
-              Events
+              {t('page.title')}
             </h1>
           </div>
           {!isEmpty && (
@@ -151,7 +154,7 @@ export function EventsPage() {
               onClick={openCreate}
               className="w-full justify-center sm:w-auto"
             >
-              ＋ New Event
+              {t('page.newEvent')}
             </Button>
           )}
         </div>
@@ -167,11 +170,11 @@ export function EventsPage() {
         {isError && !isLoading && (
           <NoData
             icon="⚠"
-            title="Could not load events"
-            message="Something went wrong reaching the server."
+            title={t('page.loadErrorTitle')}
+            message={t('page.loadErrorMessage')}
             action={
               <Button variant="ghost" onClick={() => refetch()}>
-                Try again
+                {t('page.tryAgain')}
               </Button>
             }
           />
@@ -180,11 +183,11 @@ export function EventsPage() {
         {!isLoading && !isError && sorted.length === 0 && (
           <NoData
             icon="📅"
-            title="No events yet"
-            message="Meetings, classes, appointments — anything that takes hours out of your week."
+            title={t('page.emptyTitle')}
+            message={t('page.emptyMessage')}
             action={
               <Button variant="primary" onClick={openCreate}>
-                ＋ New Event
+                {t('page.newEvent')}
               </Button>
             }
           />
@@ -260,13 +263,13 @@ export function EventsPage() {
                         {event.recurrence && (
                           <span
                             className="shrink-0 text-[12px] leading-none text-[var(--violet)]"
-                            title="Repeats"
-                            aria-label="Repeats"
+                            title={t('page.repeats')}
+                            aria-label={t('page.repeats')}
                           >
                             ↻
                           </span>
                         )}
-                        {!event.busy && <Badge variant="mint">Free</Badge>}
+                        {!event.busy && <Badge variant="mint">{t('page.free')}</Badge>}
                         {live && (
                           <span className={livePill}>
                             <motion.span
@@ -278,12 +281,12 @@ export function EventsPage() {
                                   : { duration: 1.6, repeat: Infinity, ease: 'easeInOut' }
                               }
                             />
-                            Live
+                            {t('page.live')}
                           </span>
                         )}
                       </div>
                       <p className="truncate text-[11px] text-[var(--text-lo)]">
-                        {scheduleLabel(event)}
+                        {scheduleLabel(event, t)}
                         {event.tagId && categoryName.has(event.tagId)
                           ? ` · ${categoryName.get(event.tagId)}`
                           : ''}
@@ -308,7 +311,7 @@ export function EventsPage() {
                       onChange={(on) => updateEvent.mutate({ id: event.id, paused: !on })}
                     >
                       <span className="text-[10px] tracking-[0.08em] text-[var(--text-lo)] uppercase">
-                        {event.paused ? 'Off' : 'On'}
+                        {event.paused ? t('page.off') : t('page.on')}
                       </span>
                     </Switch>
 
@@ -317,8 +320,8 @@ export function EventsPage() {
                         type="button"
                         className={rowIconBtn}
                         onClick={() => openEdit(event)}
-                        title="Edit event"
-                        aria-label="Edit event"
+                        title={t('page.edit')}
+                        aria-label={t('page.edit')}
                       >
                         ✎
                       </button>
@@ -326,8 +329,8 @@ export function EventsPage() {
                         type="button"
                         className={cn(rowIconBtn, rowIconBtnDanger)}
                         onClick={() => setDeleting(event)}
-                        title="Delete event"
-                        aria-label="Delete event"
+                        title={t('page.delete')}
+                        aria-label={t('page.delete')}
                       >
                         ✕
                       </button>
@@ -346,16 +349,17 @@ export function EventsPage() {
         <ModalHead
           title={
             <>
-              <span className="text-[var(--rose)]">⚠</span> Delete Event
+              <span className="text-[var(--rose)]">⚠</span> {t('page.deleteTitle')}
             </>
           }
         />
         <ModalBody>
           <p className="text-[12px] leading-relaxed text-[var(--text-mid)]">
-            Delete <strong className="text-[var(--text-hi)]">{deleting?.title}</strong>?
-            {deleting?.recurrence
-              ? ' Every occurrence leaves the calendar, including the ones you moved.'
-              : ''}
+            {t.rich('page.deleteConfirm', {
+              title: deleting?.title ?? '',
+              strong: (chunks) => <strong className="text-[var(--text-hi)]">{chunks}</strong>,
+            })}
+            {deleting?.recurrence ? ` ${t('page.deleteRecurringNote')}` : ''}
           </p>
         </ModalBody>
         <ModalFoot>
@@ -366,7 +370,7 @@ export function EventsPage() {
               disabled={deleteEvent.isPending}
               className="w-full justify-center sm:w-auto"
             >
-              Cancel
+              {tc('cancel')}
             </Button>
             <Button
               variant="danger"
@@ -378,7 +382,7 @@ export function EventsPage() {
               }}
               className="w-full justify-center sm:w-auto"
             >
-              {deleteEvent.isPending ? '…' : 'Delete'}
+              {deleteEvent.isPending ? '…' : tc('delete')}
             </Button>
           </div>
         </ModalFoot>
