@@ -2,9 +2,8 @@ import type { NextRequest } from 'next/server';
 
 import { connectDB } from '@/libs/mongodb';
 import { getAuthUser } from '@/server/helpers/get-auth-user';
+import { deactivateProjectTasks } from '@/server/helpers/schedule-block.helpers';
 import { ProjectModel } from '@/server/models/project.model';
-import { ScheduleBlockModel } from '@/server/models/schedule-block.model';
-import { TaskModel } from '@/server/models/task.model';
 import { asyncHandler, notFoundResponse, successResponse, unauthorizedResponse } from '@/server';
 import { serialize } from '../../route';
 
@@ -25,18 +24,8 @@ export const PATCH = asyncHandler(async (req: NextRequest, ctx) => {
 
   if (!project) return notFoundResponse('Project not found');
 
-  // Cascade: hide every child task so they disappear together
-  const childTasks = await TaskModel.find({ userId: user.sub, projectId: id }).select('_id').lean();
-  await TaskModel.updateMany({ userId: user.sub, projectId: id }, { $set: { active: false } });
-
-  // Cascade: drop scheduling blocks tied to those tasks
-  if (childTasks.length > 0) {
-    await ScheduleBlockModel.deleteMany({
-      userId: user.sub,
-      sourceType: 'task',
-      sourceId: { $in: childTasks.map((t) => t._id) },
-    });
-  }
+  // Cascade: hide every child task and drop its sessions
+  await deactivateProjectTasks(user.sub, project._id);
 
   return successResponse(serialize(project), 'Project archived');
 });

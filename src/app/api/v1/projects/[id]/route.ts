@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server';
 
 import { connectDB } from '@/libs/mongodb';
 import { getAuthUser } from '@/server/helpers/get-auth-user';
+import { deactivateProjectTasks } from '@/server/helpers/schedule-block.helpers';
 import { ProjectModel } from '@/server/models/project.model';
 import { TaskModel } from '@/server/models/task.model';
 import { asyncHandler, notFoundResponse, successResponse, unauthorizedResponse } from '@/server';
@@ -140,7 +141,7 @@ export const DELETE = asyncHandler(async (req: NextRequest, ctx) => {
 
   if (!project) return notFoundResponse('Project not found');
 
-  await TaskModel.updateMany({ userId: user.sub, projectId: id }, { $set: { active: false } });
+  await deactivateProjectTasks(user.sub, project._id);
 
   return successResponse(null, 'Project deleted');
 });

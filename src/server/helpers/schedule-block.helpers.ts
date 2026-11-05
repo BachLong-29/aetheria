@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 
 import { ScheduleBlockModel } from '@/server/models/schedule-block.model';
+import { TaskModel } from '@/server/models/task.model';
 import type { ScheduleBlockSource, TaskProgress } from '@/types/schedule-block';
 
 type IdLike = mongoose.Types.ObjectId | string;
@@ -91,4 +92,19 @@ export async function setTaskBlocksDone(
       { $set: { status: 'planned' } },
     );
   }
+}
+
+/**
+ * Hide every task of a project and drop their sessions, so a deleted or
+ * archived project leaves nothing behind on the calendar.
+ */
+export async function deactivateProjectTasks(userId: IdLike, projectId: IdLike): Promise<void> {
+  const tasks = await TaskModel.find({ userId, projectId }).select('_id').lean();
+  await TaskModel.updateMany({ userId, projectId }, { $set: { active: false } });
+  if (tasks.length === 0) return;
+  await ScheduleBlockModel.deleteMany({
+    userId,
+    sourceType: 'task',
+    sourceId: { $in: tasks.map((t) => t._id) },
+  });
 }
