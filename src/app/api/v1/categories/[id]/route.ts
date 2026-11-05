@@ -5,13 +5,10 @@ import { NextResponse } from 'next/server';
 import { connectDB } from '@/libs/mongodb';
 import { getAuthUser } from '@/server/helpers/get-auth-user';
 import { CategoryModel } from '@/server/models/category.model';
+import { EventModel } from '@/server/models/event.model';
 import { HabitModel } from '@/server/models/habit.model';
-import {
-  asyncHandler,
-  notFoundResponse,
-  successResponse,
-  unauthorizedResponse,
-} from '@/server';
+import { TaskModel } from '@/server/models/task.model';
+import { asyncHandler, notFoundResponse, successResponse, unauthorizedResponse } from '@/server';
 import { validateBody } from '@/server/validate';
 import type { Category } from '@/types/category';
 import type { ICategory } from '@/server/models/category.model';
@@ -62,12 +59,22 @@ export const DELETE = asyncHandler(async (req: NextRequest, ctx) => {
 
   await connectDB();
 
-  const inUse = await HabitModel.exists({ userId: user.sub, tagId: id, active: true });
-  if (inUse) {
+  // Override rows carry no tagId of their own, so only series/one-off rows count.
+  const [habits, tasks, events] = await Promise.all([
+    HabitModel.countDocuments({ userId: user.sub, tagId: id, active: true }),
+    TaskModel.countDocuments({ userId: user.sub, tagId: id, active: true }),
+    EventModel.countDocuments({ userId: user.sub, tagId: id, active: true }),
+  ]);
+  const usedBy = [
+    habits > 0 && `${habits} habit${habits > 1 ? 's' : ''}`,
+    tasks > 0 && `${tasks} task${tasks > 1 ? 's' : ''}`,
+    events > 0 && `${events} event${events > 1 ? 's' : ''}`,
+  ].filter(Boolean);
+  if (usedBy.length > 0) {
     return NextResponse.json(
       {
         success: false,
-        message: 'Cannot delete: this category is used by one or more habits.',
+        message: `Cannot delete: this category is used by ${usedBy.join(', ')}.`,
       },
       { status: 409 },
     );
