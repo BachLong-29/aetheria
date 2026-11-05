@@ -10,9 +10,19 @@ function toMinutes(time: string): number {
   return h * 60 + m;
 }
 
+/**
+ * Whether an item spends the day. An event switched to "doesn't take up my time" stays
+ * on the calendar but neither fills the day's capacity nor collides with other items.
+ */
+function spendsTime(item: CalendarItem): boolean {
+  return !(item.sourceType === 'event' && item.meta?.busy === false);
+}
+
 /** Items that participate in time-based checks (have a real start time + duration). */
 function timedItems(items: CalendarItem[]): TimedItem[] {
-  return items.filter((i): i is TimedItem => i.startTime !== null && i.duration > 0);
+  return items.filter(
+    (i): i is TimedItem => i.startTime !== null && i.duration > 0 && spendsTime(i),
+  );
 }
 
 /**
@@ -85,7 +95,9 @@ export function computeCapacity(
   availableMinutes: number,
 ): DayCapacity[] {
   const plannedByDate = new Map<string, number>();
-  for (const item of items) {
+  // Only what sits on the clock counts. A task with an estimate but no session is dropped
+  // onto its start date without a time, which would charge the whole estimate to one day.
+  for (const item of timedItems(items)) {
     plannedByDate.set(item.date, (plannedByDate.get(item.date) ?? 0) + item.duration);
   }
 
