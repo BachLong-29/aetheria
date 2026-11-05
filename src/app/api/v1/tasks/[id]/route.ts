@@ -119,6 +119,16 @@ export const PATCH = asyncHandler(async (req: NextRequest, ctx) => {
 
   if (!task) return notFoundResponse('Task not found');
 
+  // Archiving hides the task just as DELETE does, so its sessions go with it: left behind they
+  // keep taking up time in the planner. Reopening starts without sessions; the user re-plans.
+  if (data.active === false) {
+    await ScheduleBlockModel.deleteMany({
+      userId: user.sub,
+      sourceType: 'task',
+      sourceId: task._id,
+    });
+  }
+
   // A multi-day task is ticked a day at a time through its logs, which mark that day's
   // sessions; only a single-day task's status stands for all of its sessions.
   const multiDay = !!task.startDate && !!task.endDate && task.endDate > task.startDate;
