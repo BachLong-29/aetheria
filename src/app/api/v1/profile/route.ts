@@ -7,6 +7,8 @@ import { getAuthUser } from '@/server/helpers/get-auth-user';
 import { UserProfileModel } from '@/server/models/user-profile.model';
 import { FinanceCategoryModel } from '@/server/models/finance-category.model';
 import { UserSettingModel } from '@/server/models/user-setting.model';
+import { dayKeyIn } from '@/server/services/progress';
+import { syncStreak } from '@/server/services/streak';
 import { resolveCashLogCategoryIds } from '@/server/services/cash-log-notifications';
 import { asyncHandler, successResponse, unauthorizedResponse } from '@/server';
 import { validateBody } from '@/server/validate';
@@ -148,8 +150,12 @@ export const GET = asyncHandler(async (req: NextRequest) => {
     ),
   ]);
 
+  // A streak only moves when something is finished, so after days off it would still show the
+  // old number; settle the days that have passed before reporting it.
+  const streak = await syncStreak(user.sub, dayKeyIn(settings.timezone || 'UTC'), false);
+
   const response: CombinedProfileResponse = {
-    profile: serializeProfile(profile),
+    profile: { ...serializeProfile(profile), streak },
     settings: await serializeSetting(settings),
   };
 

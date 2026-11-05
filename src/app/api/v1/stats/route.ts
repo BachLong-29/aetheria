@@ -6,7 +6,10 @@ import { HabitLogModel } from '@/server/models/habit-log.model';
 import { HabitModel } from '@/server/models/habit.model';
 import { TaskModel } from '@/server/models/task.model';
 import { UserProfileModel } from '@/server/models/user-profile.model';
+import { dayKeyIn } from '@/server/services/progress';
 import { buildCalendar } from '@/server/services/schedule-engine';
+import { syncStreak } from '@/server/services/streak';
+import { UserSettingModel } from '@/server/models/user-setting.model';
 import { asyncHandler, successResponse, unauthorizedResponse } from '@/server';
 import type { CalendarSource } from '@/types/calendar';
 import type { HabitDay } from '@/types/habit';
@@ -154,6 +157,8 @@ export const GET = asyncHandler(async (req: NextRequest) => {
 
   // ── Character (from UserProfile) ───────────────────────────────────────────
   const profile = await UserProfileModel.findOne({ userId: user.sub }).lean();
+  const setting = await UserSettingModel.findOne({ userId: user.sub }).select('timezone').lean();
+  const userToday = dayKeyIn(setting?.timezone || 'UTC');
   const character = {
     level: profile?.level ?? 1,
     xp: profile?.xp ?? 0,
@@ -161,7 +166,7 @@ export const GET = asyncHandler(async (req: NextRequest) => {
     coins: profile?.coins ?? 0,
     gems: profile?.gems ?? 0,
     rank: profile?.rank ?? 'E',
-    streak: profile?.streak ?? 0,
+    streak: profile ? await syncStreak(user.sub, userToday, false) : 0,
   };
 
   // ── Schedule engine — hour-based workload (last 7 days) ───────────────────

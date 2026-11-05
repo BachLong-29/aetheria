@@ -5,6 +5,7 @@ import { ProgressAwardModel } from '@/server/models/progress-award.model';
 import type { ProgressAwardKind } from '@/server/models/progress-award.model';
 import { UserSettingModel } from '@/server/models/user-setting.model';
 import { UserProfileModel } from '@/server/models/user-profile.model';
+import { syncStreak } from '@/server/services/streak';
 import type { IUserProfile } from '@/server/models/user-profile.model';
 import type { ProgressReward } from '@/types/progress';
 
@@ -12,6 +13,9 @@ type Rank = (typeof RANKS)[number];
 
 /** Kinds counted against the daily cap — ordinary work, not one-off payouts. */
 const CAPPED_KINDS: ProgressAwardKind[] = ['task', 'task-log', 'habit', 'quest'];
+
+/** Kinds that can finish a day's list; goals and penalties are one-off and do not count. */
+const STREAK_KINDS: ProgressAwardKind[] = CAPPED_KINDS;
 
 /** Safety stop: no real award crosses this many levels at once. */
 const MAX_LEVELS_PER_AWARD = 50;
@@ -30,35 +34,12 @@ interface AwardInput {
 export const todayKey = () => new Date().toISOString().slice(0, 10);
 
 /** `YYYY-MM-DD` of now in `timeZone`; a stored zone can be anything, so a bad one reads as UTC. */
-function dayKeyIn(timeZone: string): string {
+export function dayKeyIn(timeZone: string): string {
   try {
     return new Intl.DateTimeFormat('en-CA', { timeZone }).format(new Date());
   } catch {
     return new Date().toISOString().slice(0, 10);
   }
-}
-
-const previousDay = (day: string) =>
-  new Date(new Date(`${day}T00:00:00Z`).getTime() - 86_400_000).toISOString().slice(0, 10);
-
-/**
- * Counts `day` into the streak once: +1 after yesterday, otherwise starts again at 1. Returns
- * the new streak, or null when today was already counted.
- */
-async function touchStreak(userId: string, day: string): Promise<number | null> {
-  const continued = await UserProfileModel.findOneAndUpdate(
-    { userId, lastActiveDay: previousDay(day) },
-    { $inc: { streak: 1 }, $set: { lastActiveDay: day } },
-    { new: true },
-  );
-  if (continued) return continued.streak;
-  // `$ne` keeps the second finished thing of the same day from resetting the count to 1.
-  const restarted = await UserProfileModel.findOneAndUpdate(
-    { userId, lastActiveDay: { $ne: day } },
-    { $set: { streak: 1, lastActiveDay: day } },
-    { new: true },
-  );
-  return restarted ? restarted.streak : null;
 }
 
 function rankForLevel(level: number): Rank {
@@ -103,7 +84,11 @@ export async function awardProgress(
   try {
     await ProgressAwardModel.create({ userId, kind, refId, date, day, ...paid });
   } catch (err) {
-    if ((err as { code?: number }).code === 11000) return null;
+    if ((err as { code?: number }).code === 11000) {
+      // Paid before, but this tick may be the one that finishes the day (tick, untick, tick).
+      if (STREAK_KINDS.includes(kind)) await syncStreak(userId, day, true);
+      return null;
+    }
     throw err;
   }
 
@@ -121,7 +106,9 @@ export async function awardProgress(
   }
 
   // After the payout, so a first-ever award has a profile to count the day on.
-  const streak = (await touchStreak(userId, day)) ?? profile?.streak ?? 0;
+  const streak = STREAK_KINDS.includes(kind)
+    ? await syncStreak(userId, day, true)
+    : (profile?.streak ?? 0);
 
   let levelsGained = 0;
   while (profile && profile.xp >= profile.xpNext && levelsGained < MAX_LEVELS_PER_AWARD) {
