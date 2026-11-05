@@ -303,13 +303,6 @@
       "start": "Bắt đầu",
       "reset": "Đặt lại"
     },
-    "confirmQuest": {
-      "buttons": {
-        "cancel": "Để sau",
-        "confirm": "Nhận thưởng",
-        "pending": "Đang lưu..."
-      }
-    },
     "addQuest": {
       "title": "Quest mới",
       "fields": {

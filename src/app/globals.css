@@ -693,32 +693,6 @@ body {
   box-shadow: 0 0 6px currentColor;
 }
 
-/* ── COMPLETION BURST ─────────────────────────────────── */
-.burst-overlay {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 999;
-}
-
-.burst-particle {
-  position: absolute;
-  border-radius: 50%;
-  animation: burst-fly 0.9s ease-out forwards;
-}
-
-@keyframes burst-fly {
-  0% {
-    opacity: 1;
-    transform: translate(0, 0) scale(1);
-  }
-
-  100% {
-    opacity: 0;
-    transform: translate(var(--dx), var(--dy)) scale(0.3);
-  }
-}
-
 .xp-toast {
   position: fixed;
   bottom: 30px;

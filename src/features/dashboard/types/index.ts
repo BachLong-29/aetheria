@@ -132,22 +132,12 @@ export interface GuildMember {
   online: boolean;
 }
 
-export interface BurstPos {
-  x: number;
-  y: number;
-}
-
 export interface DashboardSettings {
   showGuildPanel: boolean;
   timerDuration: number;
   characterName: string;
   animationsEnabled: boolean;
   showQuoteCard: boolean;
-}
-
-export interface PendingQuest {
-  quest: Quest;
-  burstPos: BurstPos | null;
 }
 
 /** Where a penalty was triggered from — determines which mandatory-task pool it draws from. */

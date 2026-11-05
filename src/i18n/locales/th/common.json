@@ -303,13 +303,6 @@
       "start": "เริ่ม",
       "reset": "รีเซ็ต"
     },
-    "confirmQuest": {
-      "buttons": {
-        "cancel": "ยังไม่ตอนนี้",
-        "confirm": "รับรางวัล",
-        "pending": "กำลังบันทึก..."
-      }
-    },
     "addQuest": {
       "title": "เควสต์ใหม่",
       "fields": {

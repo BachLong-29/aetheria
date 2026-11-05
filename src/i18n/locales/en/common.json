@@ -303,13 +303,6 @@
       "start": "Start",
       "reset": "Reset"
     },
-    "confirmQuest": {
-      "buttons": {
-        "cancel": "Not Yet",
-        "confirm": "Claim Reward",
-        "pending": "Saving..."
-      }
-    },
     "addQuest": {
       "title": "New Quest",
       "fields": {

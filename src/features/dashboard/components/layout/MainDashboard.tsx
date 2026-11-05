@@ -11,7 +11,7 @@ import { useServerReward } from '../../hooks/useServerReward';
 import { useDailyInit } from '../../hooks/useDailyInit';
 import { usePenaltyFlow } from '../../hooks/usePenaltyFlow';
 import { useQuestOrchestration } from '../../hooks/useQuestOrchestration';
-import type { BurstPos, CenterTab, Character, DashboardSettings } from '../../types';
+import type { CenterTab, Character, DashboardSettings } from '../../types';
 import { buildEmptyChar, profileToCharacter } from '../../utils/character.utils';
 import { CashLogReminderModal } from '@/features/finance/components/CashLogReminderModal';
 import { useOverdueReview } from '@/features/tasks/hooks/useOverdueReview';
@@ -32,8 +32,6 @@ import { RightColumn } from './RightColumn';
 
 type MobilePanel = 'center' | 'character' | 'timer';
 
-const DOW_TO_HABIT_DAY = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
-
 export default function MainDashboard() {
   const settings: DashboardSettings = DEFAULT_SETTINGS;
 
@@ -47,7 +45,6 @@ export default function MainDashboard() {
       String(d.getDate()).padStart(2, '0'),
     ].join('-');
   }, []);
-  const todayDayStr = useMemo(() => DOW_TO_HABIT_DAY[new Date().getDay()] ?? 'mon', []);
   const dateStr = useMemo(
     () =>
       new Date().toLocaleDateString('en-US', {
@@ -69,11 +66,9 @@ export default function MainDashboard() {
   }
 
   // Feedback state
-  const [burst, setBurst] = useState<BurstPos | null>(null);
   const [toast, setToast] = useState<{ xp: number; coins: number } | null>(null);
   const [levelUp, setLevelUp] = useState<{ level: number; rank?: string } | null>(null);
 
-  const handleBurstDone = useCallback(() => setBurst(null), []);
   const handleToastDone = useCallback(() => setToast(null), []);
   const handleLevelUpDone = useCallback(() => setLevelUp(null), []);
   const handleLevelUp = useCallback(
@@ -89,20 +84,8 @@ export default function MainDashboard() {
     onLevelUp: handleLevelUp,
   });
 
-  const onBurst = useCallback(
-    (pos: BurstPos) => {
-      if (settings.animationsEnabled) setBurst(pos);
-    },
-    [settings.animationsEnabled],
-  );
   // Quest / habit / task orchestration
-  const { quests, pendingQuest, handleConfirmQuest, handleAddQuest, handleCancelQuest } =
-    useQuestOrchestration({
-      todayDateStr,
-      todayDayStr,
-      animationsEnabled: settings.animationsEnabled,
-      onBurst,
-    });
+  const { quests, handleAddQuest } = useQuestOrchestration();
 
   // Overdue task review
   const {
@@ -194,9 +177,6 @@ export default function MainDashboard() {
     <>
       {/* Group essential modals */}
       <DashboardOverlays
-        burst={burst}
-        animationsEnabled={settings.animationsEnabled}
-        onBurstDone={handleBurstDone}
         toast={toast}
         onToastDone={handleToastDone}
         levelUp={levelUp}
@@ -204,12 +184,9 @@ export default function MainDashboard() {
         penaltyState={penaltyState}
         penaltyFailed={penaltyFailed}
         failedTier={failedTier}
-        pendingQuest={pendingQuest}
         onPenaltyComplete={handlePenaltyComplete}
         onPenaltyFail={handlePenaltyFail}
         onFailureContinue={handleFailureContinue}
-        onConfirmQuest={handleConfirmQuest}
-        onCancelQuest={handleCancelQuest}
       />
 
       {/* Last in the queue of things that greet you: a missing note is the
