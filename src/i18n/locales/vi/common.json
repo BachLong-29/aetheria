@@ -903,6 +903,13 @@
     "marquee": {
       "allDay": "Cả ngày",
       "ariaLabel": "Sự kiện hôm nay"
+    },
+    "occurrence": {
+      "hint": "Chỉ đổi buổi ngày {date}. Sự kiện lặp giữ nguyên.",
+      "date": "Ngày",
+      "time": "Giờ",
+      "move": "Dời buổi này",
+      "skip": "Bỏ buổi này"
     }
   },
   "share": {

@@ -37,6 +37,7 @@ import { AddTaskModal } from '@/features/tasks/components/shared/AddTaskModal';
 import { EditTaskModal } from '@/features/tasks/components/shared/EditTaskModal';
 
 import { DayActionMenu } from './DayActionMenu';
+import { OccurrenceModal } from '@/features/events/components/OccurrenceModal';
 import { TaskPickerModal } from './TaskPickerModal';
 import { SessionPlanner, type PlannerTask } from '@/features/schedule/components/SessionPlanner';
 import {
@@ -728,39 +729,19 @@ export function WeekView({
         </ModalFoot>
       </Modal>
 
-      {/* Skip one occurrence of a repeating event without touching the series */}
-      <Modal open={cancelling !== null} onClose={() => setCancelling(null)} maxWidth="360px">
-        <ModalHead title={`↻ ${cancelling?.title ?? ''}`} />
-        <ModalBody>
-          <p className="text-[12px] text-[var(--text-hi)] leading-relaxed">
-            Skip this one on <strong>{cancelling?.date}</strong>? The repeating event stays as it
-            is.
-          </p>
-        </ModalBody>
-        <ModalFoot>
-          <div className="flex w-full flex-col gap-2 sm:flex-row sm:justify-end">
-            <Button
-              variant="ghost"
-              onClick={() => setCancelling(null)}
-              className="w-full justify-center sm:w-auto"
-            >
-              Keep it
-            </Button>
-            <Button
-              variant="primary"
-              onClick={() => {
-                if (cancelling) {
-                  overrideEvent({ id: cancelling.eventId, date: cancelling.date, cancelled: true });
-                }
-                setCancelling(null);
-              }}
-              className="w-full justify-center sm:w-auto"
-            >
-              Skip this one
-            </Button>
-          </div>
-        </ModalFoot>
-      </Modal>
+      {/* Move or skip one occurrence of a repeating event without touching the series */}
+      <OccurrenceModal
+        occurrence={cancelling}
+        onClose={() => setCancelling(null)}
+        onMove={(occ, change) => {
+          overrideEvent({ id: occ.eventId, date: occ.date, ...change });
+          setCancelling(null);
+        }}
+        onSkip={(occ) => {
+          overrideEvent({ id: occ.eventId, date: occ.date, cancelled: true });
+          setCancelling(null);
+        }}
+      />
 
       <TaskPickerModal
         open={pickerDay !== null}

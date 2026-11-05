@@ -903,6 +903,13 @@
     "marquee": {
       "allDay": "All day",
       "ariaLabel": "Today's events"
+    },
+    "occurrence": {
+      "hint": "Change only {date}. The repeating event stays as it is.",
+      "date": "Day",
+      "time": "Time",
+      "move": "Move this one",
+      "skip": "Skip this one"
     }
   },
   "share": {
