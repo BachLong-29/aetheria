@@ -3,12 +3,19 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 import { connectDB } from '@/libs/mongodb';
+import { isDuplicateKeyError } from '@/server/helpers/duplicate-key';
 import { getAuthUser } from '@/server/helpers/get-auth-user';
 import { CategoryModel } from '@/server/models/category.model';
 import { EventModel } from '@/server/models/event.model';
 import { HabitModel } from '@/server/models/habit.model';
 import { TaskModel } from '@/server/models/task.model';
-import { asyncHandler, notFoundResponse, successResponse, unauthorizedResponse } from '@/server';
+import {
+  asyncHandler,
+  errorResponse,
+  notFoundResponse,
+  successResponse,
+  unauthorizedResponse,
+} from '@/server';
 import { validateBody } from '@/server/validate';
 import type { Category } from '@/types/category';
 import type { ICategory } from '@/server/models/category.model';
@@ -39,15 +46,22 @@ export const PATCH = asyncHandler(async (req: NextRequest, ctx) => {
 
   await connectDB();
 
-  const category = await CategoryModel.findOneAndUpdate(
-    { _id: id, userId: user.sub },
-    { name: data.name },
-    { new: true },
-  );
+  try {
+    const category = await CategoryModel.findOneAndUpdate(
+      { _id: id, userId: user.sub },
+      { name: data.name },
+      { new: true },
+    );
 
-  if (!category) return notFoundResponse('Category not found');
+    if (!category) return notFoundResponse('Category not found');
 
-  return successResponse(serialize(category), 'Category updated');
+    return successResponse(serialize(category), 'Category updated');
+  } catch (err) {
+    if (isDuplicateKeyError(err)) {
+      return errorResponse(`A category named "${data.name}" already exists.`, 409);
+    }
+    throw err;
+  }
 });
 
 // DELETE /api/v1/categories/:id

@@ -2,9 +2,16 @@ import { z } from 'zod';
 import type { NextRequest } from 'next/server';
 
 import { connectDB } from '@/libs/mongodb';
+import { isDuplicateKeyError } from '@/server/helpers/duplicate-key';
 import { getAuthUser } from '@/server/helpers/get-auth-user';
 import { CategoryModel } from '@/server/models/category.model';
-import { asyncHandler, createdResponse, successResponse, unauthorizedResponse } from '@/server';
+import {
+  asyncHandler,
+  createdResponse,
+  errorResponse,
+  successResponse,
+  unauthorizedResponse,
+} from '@/server';
 import { validateBody } from '@/server/validate';
 import type { Category } from '@/types/category';
 import type { ICategory } from '@/server/models/category.model';
@@ -35,9 +42,7 @@ export const GET = asyncHandler(async (req: NextRequest) => {
   let categories = await CategoryModel.find({ userId: user.sub }).sort({ createdAt: 1 });
 
   if (categories.length === 0) {
-    await CategoryModel.insertMany(
-      DEFAULT_CATEGORIES.map((name) => ({ userId: user.sub, name })),
-    );
+    await CategoryModel.insertMany(DEFAULT_CATEGORIES.map((name) => ({ userId: user.sub, name })));
     categories = await CategoryModel.find({ userId: user.sub }).sort({ createdAt: 1 });
   }
 
@@ -54,10 +59,15 @@ export const POST = asyncHandler(async (req: NextRequest) => {
 
   await connectDB();
 
-  const category = await CategoryModel.create({
-    userId: user.sub,
-    name: data.name,
-  });
-
-  return createdResponse(serialize(category), 'Category created');
+  try {
+    const category = await CategoryModel.create({
+      userId: user.sub,
+      name: data.name,
+    });
+    return createdResponse(serialize(category), 'Category created');
+  } catch (err) {
+    if (isDuplicateKeyError(err))
+      return errorResponse(`A category named "${data.name}" already exists.`, 409);
+    throw err;
+  }
 });
