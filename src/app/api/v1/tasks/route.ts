@@ -6,7 +6,13 @@ import { connectDB } from '@/libs/mongodb';
 import { getAuthUser } from '@/server/helpers/get-auth-user';
 import { getProgressMap, toTaskProgress } from '@/server/helpers/schedule-block.helpers';
 import { TaskModel } from '@/server/models/task.model';
-import { asyncHandler, createdResponse, successResponse, unauthorizedResponse } from '@/server';
+import {
+  asyncHandler,
+  createdResponse,
+  errorResponse,
+  successResponse,
+  unauthorizedResponse,
+} from '@/server';
 import { validateBody, validateSearchParams } from '@/server/validate';
 import type { Task } from '@/types/task';
 import type { PaginationMeta } from '@/types/api';
@@ -215,7 +221,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
   const endDate = data.endDate ? new Date(data.endDate) : undefined;
 
   if (startDate && endDate && endDate < startDate) {
-    return successResponse(null, 'endDate must be >= startDate');
+    return errorResponse('endDate must be on or after startDate', 400);
   }
 
   const task = await TaskModel.create({

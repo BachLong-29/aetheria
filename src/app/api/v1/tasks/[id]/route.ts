@@ -7,7 +7,13 @@ import { setTaskBlocksDone } from '@/server/helpers/schedule-block.helpers';
 import { ScheduleBlockModel } from '@/server/models/schedule-block.model';
 import { TaskModel } from '@/server/models/task.model';
 import { awardProgress, todayKey } from '@/server/services/progress';
-import { asyncHandler, notFoundResponse, successResponse, unauthorizedResponse } from '@/server';
+import {
+  asyncHandler,
+  errorResponse,
+  notFoundResponse,
+  successResponse,
+  unauthorizedResponse,
+} from '@/server';
 import { validateBody } from '@/server/validate';
 import { TASK_COINS, TASK_XP } from '@/constants/progress';
 import type { Task } from '@/types/task';
@@ -108,6 +114,21 @@ export const PATCH = asyncHandler(async (req: NextRequest, ctx) => {
 
   if (duration === null) unsetData.duration = 1;
   else if (duration !== undefined) setData.duration = duration;
+
+  // The range is judged on what the task will hold afterwards, so moving only one end counts.
+  if (startDate || endDate) {
+    const current = await TaskModel.findOne({ _id: id, userId: user.sub }).select(
+      'startDate endDate',
+    );
+    if (current) {
+      const nextStart =
+        startDate === null ? undefined : startDate ? new Date(startDate) : current.startDate;
+      const nextEnd = endDate === null ? undefined : endDate ? new Date(endDate) : current.endDate;
+      if (nextStart && nextEnd && nextEnd < nextStart) {
+        return errorResponse('endDate must be on or after startDate', 400);
+      }
+    }
+  }
 
   const updateOp: Record<string, unknown> = {};
   if (Object.keys(setData).length > 0) updateOp.$set = setData;
