@@ -58,11 +58,20 @@ function balanceDelta(type: 'income' | 'expense', amount: number): number {
 }
 
 /**
- * A wallet is never allowed to go below zero by hand. Typed in, the overdraft
+ * Typing a wallet from zero-or-more down below zero is refused. Typed in, the overdraft
  * is a mistake worth catching at the keyboard; arriving from the bank it is a
  * fact, and the webhook records it with a flag instead — see the SePay route.
  */
 export const OVERDRAFT_MESSAGE = 'This would put the wallet below zero';
+
+/**
+ * Whether a manual change takes a wallet from zero-or-more to below zero. A wallet that is
+ * already negative (set by hand as a debt wallet, or pushed there by the bank) is not blocked:
+ * refusing every entry on it would lock the wallet until its balance is reset.
+ */
+export function crossesBelowZero(before: number, after: number): boolean {
+  return before >= 0 && after < 0;
+}
 
 // GET /api/v1/finance/transactions?walletId=&categoryId=&type=&from=&to=&search=
 export const GET = asyncHandler(async (req: NextRequest) => {
@@ -119,7 +128,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
   });
   if (!category) return errorResponse('Category not found or type mismatch', 400);
 
-  if (wallet.balance + balanceDelta(data.type, data.amount) < 0) {
+  if (crossesBelowZero(wallet.balance, wallet.balance + balanceDelta(data.type, data.amount))) {
     return errorResponse(OVERDRAFT_MESSAGE, 400);
   }
 

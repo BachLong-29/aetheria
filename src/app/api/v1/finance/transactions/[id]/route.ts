@@ -14,7 +14,7 @@ import {
   unauthorizedResponse,
 } from '@/server';
 import { validateBody } from '@/server/validate';
-import { OVERDRAFT_MESSAGE, serialize } from '../route';
+import { crossesBelowZero, OVERDRAFT_MESSAGE, serialize } from '../route';
 
 const TRANSACTION_TYPES = ['income', 'expense'] as const;
 
@@ -86,7 +86,7 @@ export const PATCH = asyncHandler(async (req: NextRequest, ctx) => {
     target.balance -
     (sameWallet ? balanceDelta(existing.type, existing.amount) : 0) +
     balanceDelta(nextType, nextAmount);
-  if (after < 0) return errorResponse(OVERDRAFT_MESSAGE, 400);
+  if (crossesBelowZero(target.balance, after)) return errorResponse(OVERDRAFT_MESSAGE, 400);
 
   // Reverse the old effect on the old wallet, apply the new effect on the (possibly new) wallet
   await WalletModel.findByIdAndUpdate(existing.walletId, {
@@ -134,7 +134,13 @@ export const DELETE = asyncHandler(async (req: NextRequest, ctx) => {
   // Removing income takes money back out, which can overdraw just as spending
   // does. Checked before the row is gone, so nothing is lost on a refusal.
   const wallet = await WalletModel.findById(transaction.walletId);
-  if (wallet && wallet.balance - balanceDelta(transaction.type, transaction.amount) < 0) {
+  if (
+    wallet &&
+    crossesBelowZero(
+      wallet.balance,
+      wallet.balance - balanceDelta(transaction.type, transaction.amount),
+    )
+  ) {
     return errorResponse(OVERDRAFT_MESSAGE, 400);
   }
 
