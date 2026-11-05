@@ -36,7 +36,7 @@ Priority 3 — no block, other day → 'morning'
 ```
 
 `UITask.startTime` is kept as a **derived display value** (the block's time), so card
-components (QuestCardMini, ScheduleStrip, expanded card) are unchanged — only its source
+components (ScheduleStrip, expanded card) are unchanged — only its source
 moved from the task entity to the block.
 
 ### Habits
