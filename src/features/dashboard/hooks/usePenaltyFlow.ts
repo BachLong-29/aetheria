@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { OverdueItem } from '@/features/tasks/hooks/useOverdueReview';
-import { ESCALATIONS, TASK_PENALTY_KEY } from '../constants';
+import { penaltyEscalationFor } from '@/constants/penalty';
+import { TASK_PENALTY_KEY } from '../constants';
 import type {
   Character,
   PenaltySource,
@@ -112,8 +113,7 @@ export function usePenaltyFlow({ quests, overdueTasks, applyGamePatch }: Params)
 
   const handlePenaltyFail = useCallback(() => {
     if (!penaltyState) return;
-    const esc = ESCALATIONS[Math.min(penaltyState.tier - 1, ESCALATIONS.length - 1)];
-    if (!esc) return;
+    const esc = penaltyEscalationFor(penaltyState.tier);
     applyGamePatch((c) => ({
       ...c,
       stats: c.stats.map((s) => ({ ...s, value: Math.max(0, s.value - esc.statLoss) })),

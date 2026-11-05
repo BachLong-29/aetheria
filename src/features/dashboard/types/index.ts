@@ -145,14 +145,6 @@ export interface DashboardSettings {
   showQuoteCard: boolean;
 }
 
-export interface Escalation {
-  xpLoss: number;
-  coinLoss: number;
-  streakBreak: boolean;
-  statLoss: number;
-  rankDemote: boolean;
-}
-
 export interface PendingQuest {
   quest: Quest;
   burstPos: BurstPos | null;

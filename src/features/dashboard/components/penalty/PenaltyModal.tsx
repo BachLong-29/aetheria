@@ -3,6 +3,7 @@ import { useTranslations } from 'next-intl';
 
 import { CoinIcon } from '@/components/common/CoinIcon';
 import { Button } from '@/components/ui/Button';
+import { penaltyEscalationFor } from '@/constants/penalty';
 import { cn } from '@/libs/utils';
 
 import type { PenaltySource, PenaltyUnfinishedItem } from '../../types';
@@ -23,15 +24,9 @@ interface PenaltyTask {
   icon: string;
 }
 
-interface PenaltyEscalation {
-  tier: number;
+interface TierLabel {
   label: string;
   sublabel: string;
-  xpLoss: number;
-  statLoss: number;
-  coinLoss: number;
-  streakBreak: boolean;
-  rankDemote: boolean;
 }
 
 function pickPenalty(seed: number, source: PenaltySource): PenaltyTask {
@@ -62,9 +57,9 @@ export function PenaltyModal({
   onFail,
 }: PenaltyModalProps) {
   const t = useTranslations('dashboard');
-  const escalation =
-    PENALTY_ESCALATIONS[Math.min(tier - 1, PENALTY_ESCALATIONS.length - 1)] ??
-    PENALTY_ESCALATIONS[0];
+  const tierLabel =
+    TIER_LABELS[Math.min(Math.max(tier, 1) - 1, TIER_LABELS.length - 1)] ?? TIER_LABELS[0];
+  const escalation = { ...penaltyEscalationFor(tier), ...tierLabel };
 
   // Computed once on mount and kept stable — a plain value, not a ref read in render.
   const [penalty] = useState<PenaltyTask>(() => pickPenalty(unfinished.length + tier * 7, source));
@@ -314,47 +309,12 @@ const TASK_PENALTY_POOL: [PenaltyTask, ...PenaltyTask[]] = [
   },
 ];
 
-const PENALTY_ESCALATIONS: [PenaltyEscalation, ...PenaltyEscalation[]] = [
-  {
-    tier: 1,
-    label: 'TIER I',
-    sublabel: 'Initial Warning',
-    xpLoss: 200,
-    statLoss: 5,
-    coinLoss: 50,
-    streakBreak: false,
-    rankDemote: false,
-  },
-  {
-    tier: 2,
-    label: 'TIER II',
-    sublabel: 'Stat Decay',
-    xpLoss: 500,
-    statLoss: 12,
-    coinLoss: 120,
-    streakBreak: false,
-    rankDemote: false,
-  },
-  {
-    tier: 3,
-    label: 'TIER III',
-    sublabel: 'Streak Severed',
-    xpLoss: 1000,
-    statLoss: 20,
-    coinLoss: 250,
-    streakBreak: true,
-    rankDemote: false,
-  },
-  {
-    tier: 4,
-    label: 'TIER IV',
-    sublabel: 'RANK DEMOTION',
-    xpLoss: 2000,
-    statLoss: 35,
-    coinLoss: 500,
-    streakBreak: true,
-    rankDemote: true,
-  },
+/** Heading of each tier; what the tier costs comes from `PENALTY_ESCALATIONS`. */
+const TIER_LABELS: [TierLabel, ...TierLabel[]] = [
+  { label: 'TIER I', sublabel: 'Initial Warning' },
+  { label: 'TIER II', sublabel: 'Streak Severed' },
+  { label: 'TIER III', sublabel: 'RANK DEMOTION' },
+  { label: 'TIER IV', sublabel: 'Maximum Penalty' },
 ];
 
 const TIME_BY_TIER: Record<number, number> = {

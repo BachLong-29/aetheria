@@ -1,4 +1,4 @@
-import type { DashboardSettings, Escalation, HabitColor, HabitDay, QuestType } from '../types';
+import type { DashboardSettings, HabitColor, HabitDay, QuestType } from '../types';
 
 export const QUEST_ICONS: Record<QuestType, string> = {
   focus: '🎯',
@@ -52,13 +52,6 @@ export const QUOTES = [
 
 export const XP_MAP: Record<string, number> = { S: 150, A: 120, B: 90, C: 60, D: 50 };
 export const COIN_MAP: Record<string, number> = { S: 40, A: 30, B: 25, C: 15, D: 12 };
-
-export const ESCALATIONS: Escalation[] = [
-  { xpLoss: 100, coinLoss: 20, streakBreak: false, statLoss: 2, rankDemote: false },
-  { xpLoss: 200, coinLoss: 40, streakBreak: true, statLoss: 5, rankDemote: false },
-  { xpLoss: 350, coinLoss: 80, streakBreak: true, statLoss: 8, rankDemote: true },
-  { xpLoss: 500, coinLoss: 120, streakBreak: true, statLoss: 12, rankDemote: true },
-];
 
 export const DEFAULT_SETTINGS: DashboardSettings = {
   // The "This Week" panel is off: its room goes to Projects. Flip to bring it back.
