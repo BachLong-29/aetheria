@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server';
 
 import { connectDB } from '@/libs/mongodb';
 import { getAuthUser } from '@/server/helpers/get-auth-user';
+import { releaseUploads } from '@/server/helpers/upload-cleanup';
 import { HabitModel } from '@/server/models/habit.model';
 import { HabitLogModel } from '@/server/models/habit-log.model';
 import { asyncHandler, notFoundResponse, successResponse, unauthorizedResponse } from '@/server';
@@ -58,6 +59,11 @@ export const PATCH = asyncHandler(async (req: NextRequest, ctx) => {
 
   await connectDB();
 
+  const before =
+    data.icon !== undefined
+      ? await HabitModel.findOne({ _id: id, userId: user.sub }).select('icon').lean()
+      : null;
+
   const habit = await HabitModel.findOneAndUpdate(
     { _id: id, userId: user.sub },
     { $set: data },
@@ -65,6 +71,8 @@ export const PATCH = asyncHandler(async (req: NextRequest, ctx) => {
   );
 
   if (!habit) return notFoundResponse('Habit not found');
+
+  if (before) await releaseUploads(user.sub, [before.icon]);
 
   return successResponse(serialize(habit), 'Habit updated');
 });
@@ -83,6 +91,7 @@ export const DELETE = asyncHandler(async (req: NextRequest, ctx) => {
   if (!habit) return notFoundResponse('Habit not found');
 
   await HabitLogModel.deleteMany({ userId: user.sub, habitId: id });
+  await releaseUploads(user.sub, [habit.icon]);
 
   return successResponse(null, 'Habit deleted');
 });

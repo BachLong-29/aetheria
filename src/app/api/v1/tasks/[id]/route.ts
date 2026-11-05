@@ -4,6 +4,7 @@ import type { NextRequest } from 'next/server';
 import { connectDB } from '@/libs/mongodb';
 import { getAuthUser } from '@/server/helpers/get-auth-user';
 import { setTaskBlocksDone } from '@/server/helpers/schedule-block.helpers';
+import { releaseUploads } from '@/server/helpers/upload-cleanup';
 import { ScheduleBlockModel } from '@/server/models/schedule-block.model';
 import { TaskModel } from '@/server/models/task.model';
 import { awardProgress, todayKey } from '@/server/services/progress';
@@ -134,11 +135,24 @@ export const PATCH = asyncHandler(async (req: NextRequest, ctx) => {
   if (Object.keys(setData).length > 0) updateOp.$set = setData;
   if (Object.keys(unsetData).length > 0) updateOp.$unset = unsetData;
 
+  // Images the edit may drop, read before they are overwritten.
+  const before =
+    data.attachments !== undefined || data.icon !== undefined
+      ? await TaskModel.findOne({ _id: id, userId: user.sub }).select('icon attachments').lean()
+      : null;
+
   const task = await TaskModel.findOneAndUpdate({ _id: id, userId: user.sub }, updateOp, {
     new: true,
   });
 
   if (!task) return notFoundResponse('Task not found');
+
+  if (before) {
+    await releaseUploads(user.sub, [
+      ...(data.attachments !== undefined ? (before.attachments ?? []) : []),
+      ...(data.icon !== undefined ? [before.icon] : []),
+    ]);
+  }
 
   // Archiving hides the task just as DELETE does, so its sessions go with it: left behind they
   // keep taking up time in the planner. Reopening starts without sessions; the user re-plans.

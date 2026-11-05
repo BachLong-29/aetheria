@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server';
 
 import { connectDB } from '@/libs/mongodb';
 import { getAuthUser } from '@/server/helpers/get-auth-user';
+import { releaseUploads } from '@/server/helpers/upload-cleanup';
 import { EventModel } from '@/server/models/event.model';
 import { asyncHandler, notFoundResponse, successResponse, unauthorizedResponse } from '@/server';
 import { validateBody } from '@/server/validate';
@@ -99,6 +100,11 @@ export const PATCH = asyncHandler(async (req: NextRequest, ctx) => {
     put('duration', data.duration);
   }
 
+  const before =
+    data.icon !== undefined
+      ? await EventModel.findOne({ _id: id, userId: user.sub }).select('icon').lean()
+      : null;
+
   const event = await EventModel.findOneAndUpdate(
     { _id: id, userId: user.sub },
     {
@@ -108,6 +114,8 @@ export const PATCH = asyncHandler(async (req: NextRequest, ctx) => {
     { new: true, runValidators: true },
   );
   if (!event) return notFoundResponse('Event not found');
+
+  if (before) await releaseUploads(user.sub, [before.icon]);
 
   return successResponse(serialize(event), 'Event updated successfully');
 });

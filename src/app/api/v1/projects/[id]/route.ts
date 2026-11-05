@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server';
 
 import { connectDB } from '@/libs/mongodb';
 import { getAuthUser } from '@/server/helpers/get-auth-user';
+import { releaseUploads } from '@/server/helpers/upload-cleanup';
 import { deactivateProjectTasks } from '@/server/helpers/schedule-block.helpers';
 import { ProjectModel } from '@/server/models/project.model';
 import { TaskModel } from '@/server/models/task.model';
@@ -112,11 +113,18 @@ export const PUT = asyncHandler(async (req: NextRequest, ctx) => {
   if (Object.keys(setData).length > 0) updateOp.$set = setData;
   if (Object.keys(unsetData).length > 0) updateOp.$unset = unsetData;
 
+  const before =
+    data.icon !== undefined
+      ? await ProjectModel.findOne({ _id: id, userId: user.sub }).select('icon').lean()
+      : null;
+
   const project = await ProjectModel.findOneAndUpdate({ _id: id, userId: user.sub }, updateOp, {
     new: true,
   });
 
   if (!project) return notFoundResponse('Project not found');
+
+  if (before) await releaseUploads(user.sub, [before.icon]);
 
   const tasks = await TaskModel.find({ userId: user.sub, projectId: id, active: true });
   const done = tasks.filter((t) => t.status === 'done').length;
