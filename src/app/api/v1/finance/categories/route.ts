@@ -106,6 +106,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     icon: data.icon,
     color: data.color,
     keywords: data.keywords ?? [],
+    excludeFromTotals: data.excludeFromTotals ?? false,
   });
 
   return createdResponse(serialize(category), 'Category created');
