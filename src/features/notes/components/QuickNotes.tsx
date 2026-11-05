@@ -16,8 +16,8 @@ import { useCreateNote, useNotes, useToggleNoteArchived } from '../hooks/useNote
  *
  * Mounted globally beside GlobalSearch and QuickAddTask, so it never costs a
  * navigation — losing the page you were on is exactly the friction this
- * exists to remove. Opened from QuickCreateFab on a phone and from the
- * topbar's ＋ menu on desktop.
+ * exists to remove. Opened from QuickCreateFab at every screen size, and
+ * from the assistant's "View notes" link (`ui.store.openNotes`).
  *
  * Enter inserts a newline rather than saving: an idea is often two lines, and
  * a key that silently commits half of one is worse than a button.
