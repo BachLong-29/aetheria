@@ -3,10 +3,6 @@ import type { NextRequest } from 'next/server';
 
 import { connectDB } from '@/libs/mongodb';
 import { getAuthUser } from '@/server/helpers/get-auth-user';
-import { EventModel } from '@/server/models/event.model';
-import { HabitModel } from '@/server/models/habit.model';
-import { ProjectModel } from '@/server/models/project.model';
-import { TaskModel } from '@/server/models/task.model';
 import { UserSettingModel } from '@/server/models/user-setting.model';
 import { asyncHandler, successResponse, unauthorizedResponse } from '@/server';
 import { validateBody, validateSearchParams } from '@/server/validate';
@@ -18,38 +14,10 @@ const urlSchema = z.object({
   url: z.string().trim().url().startsWith('https://').max(500),
 });
 
-const UPLOADED = /^https?:\/\//i;
-
-/** Images already in use as icons, newest first — what was uploaded before the library existed. */
-async function uploadedIconsInUse(userId: string): Promise<string[]> {
-  const filter = { userId, icon: UPLOADED };
-  const projection = { icon: 1, updatedAt: 1 };
-  const found = await Promise.all([
-    TaskModel.find(filter, projection).lean(),
-    HabitModel.find(filter, projection).lean(),
-    EventModel.find(filter, projection).lean(),
-    ProjectModel.find(filter, projection).lean(),
-  ]);
-  const urls = found
-    .flat()
-    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-    .map((doc) => (doc.icon ?? '').trim());
-  return [...new Set(urls)].filter(Boolean).slice(0, MAX_LIBRARY);
-}
-
+/** The images the user has uploaded and kept, newest first. Empty until they upload one. */
 async function readLibrary(userId: string): Promise<string[]> {
   const settings = await UserSettingModel.findOne({ userId }, { iconLibrary: 1 }).lean();
-  if (settings?.iconLibrary) return settings.iconLibrary;
-
-  // First look: start the library from the images already in use. Only while the field is
-  // absent, so a library the user has emptied on purpose is not refilled.
-  const seeded = await uploadedIconsInUse(userId);
-  await UserSettingModel.updateOne(
-    settings ? { userId, iconLibrary: { $exists: false } } : { userId },
-    settings ? { $set: { iconLibrary: seeded } } : { $setOnInsert: { iconLibrary: seeded } },
-    { upsert: !settings },
-  );
-  return seeded;
+  return settings?.iconLibrary ?? [];
 }
 
 // GET /api/v1/icon-library — uploaded icon images kept for reuse, newest first
