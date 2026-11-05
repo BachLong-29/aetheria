@@ -2,10 +2,11 @@ import { z } from 'zod';
 import type { NextRequest } from 'next/server';
 
 import { connectDB } from '@/libs/mongodb';
+import { isPastBudgetMonth, PAST_MONTH_MESSAGE } from '@/server/helpers/budget-month';
 import { getAuthUser } from '@/server/helpers/get-auth-user';
 import { BudgetModel } from '@/server/models/budget.model';
 import { FinanceCategoryModel } from '@/server/models/finance-category.model';
-import { asyncHandler, successResponse, unauthorizedResponse } from '@/server';
+import { asyncHandler, errorResponse, successResponse, unauthorizedResponse } from '@/server';
 import { validateBody } from '@/server/validate';
 import { listBudgetsWithSpent } from '@/server/services/finance-budget';
 import type { TaskColor } from '@/types/task';
@@ -52,6 +53,10 @@ export const POST = asyncHandler(async (req: NextRequest) => {
   if (error) return error;
 
   await connectDB();
+
+  if (await isPastBudgetMonth(user.sub, data.month)) {
+    return errorResponse(PAST_MONTH_MESSAGE, 400);
+  }
 
   // One read instead of one lookup per row, matched on a normalised name so
   // "  ăn trưa" and "Ăn Trưa" are the same category rather than two.
