@@ -2,8 +2,15 @@ import type { NextRequest } from 'next/server';
 
 import { connectDB } from '@/libs/mongodb';
 import { getAuthUser } from '@/server/helpers/get-auth-user';
+import { presetRefsError } from '@/server/helpers/preset-refs';
 import { TransactionPresetModel } from '@/server/models/transaction-preset.model';
-import { asyncHandler, notFoundResponse, successResponse, unauthorizedResponse } from '@/server';
+import {
+  asyncHandler,
+  errorResponse,
+  notFoundResponse,
+  successResponse,
+  unauthorizedResponse,
+} from '@/server';
 import { validateBody } from '@/server/validate';
 import { createPresetSchema, serialize } from '../route';
 
@@ -21,6 +28,20 @@ export const PATCH = asyncHandler(async (req: NextRequest, ctx) => {
   if (error) return error;
 
   await connectDB();
+
+  // Judge the preset as it will be after the edit: a new type must still fit its category. A
+  // label or amount edit skips this, so a preset whose wallet was since deleted stays editable.
+  if (data.type || data.walletId || data.categoryId) {
+    const current = await TransactionPresetModel.findOne({ _id: id, userId: user.sub });
+    if (!current) return notFoundResponse('Preset not found');
+    const refsError = await presetRefsError(
+      user.sub,
+      data.type ?? current.type,
+      data.walletId ?? current.walletId,
+      data.categoryId ?? current.categoryId,
+    );
+    if (refsError) return errorResponse(refsError.message, refsError.status);
+  }
 
   const { note, ...rest } = data;
   const update: Record<string, unknown> = {};

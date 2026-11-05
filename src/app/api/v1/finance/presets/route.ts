@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server';
 
 import { connectDB } from '@/libs/mongodb';
 import { getAuthUser } from '@/server/helpers/get-auth-user';
+import { presetRefsError } from '@/server/helpers/preset-refs';
 import {
   MAX_TRANSACTION_PRESETS,
   TransactionPresetModel,
@@ -10,6 +11,7 @@ import {
 import {
   asyncHandler,
   createdResponse,
+  errorResponse,
   successResponse,
   unauthorizedResponse,
   validationErrorResponse,
@@ -61,9 +63,16 @@ export const POST = asyncHandler(async (req: NextRequest) => {
 
   await connectDB();
 
-  const count = await TransactionPresetModel.countDocuments({ userId: user.sub });
-  if (count >= MAX_TRANSACTION_PRESETS) {
-    return validationErrorResponse({ _: [`At most ${MAX_TRANSACTION_PRESETS} presets`] });
+  const refsError = await presetRefsError(user.sub, data.type, data.walletId, data.categoryId);
+  if (refsError) return errorResponse(refsError.message, refsError.status);
+
+  const limitError = () =>
+    validationErrorResponse({ _: [`At most ${MAX_TRANSACTION_PRESETS} presets`] });
+
+  if (
+    (await TransactionPresetModel.countDocuments({ userId: user.sub })) >= MAX_TRANSACTION_PRESETS
+  ) {
+    return limitError();
   }
 
   const preset = await TransactionPresetModel.create({
@@ -71,6 +80,18 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     ...data,
     note: data.note || undefined,
   });
+
+  // Count-then-create leaves a gap two devices can slip through. Count again once written; the
+  // newest rows are the ones over the cap, so only a preset past the limit removes itself.
+  const kept = await TransactionPresetModel.find({ userId: user.sub })
+    .sort({ createdAt: 1, _id: 1 })
+    .limit(MAX_TRANSACTION_PRESETS)
+    .select('_id')
+    .lean();
+  if (!kept.some((p) => p._id.equals(preset._id))) {
+    await TransactionPresetModel.deleteOne({ _id: preset._id });
+    return limitError();
+  }
 
   return createdResponse(serialize(preset), 'Preset created');
 });
