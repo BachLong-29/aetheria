@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/libs/utils';
 
 export interface SectionDef {
@@ -27,9 +28,12 @@ interface Props {
   active: string;
   onPick: (id: string) => void;
   lastSaved?: string | null;
+  /** The form differs from what the server holds. */
+  dirty?: boolean;
 }
 
-export function ProfileSectionNav({ active, onPick, lastSaved }: Props) {
+export function ProfileSectionNav({ active, onPick, lastSaved, dirty }: Props) {
+  const t = useTranslations('profile.status');
   const navCls = cn('flex flex-col h-full', 'px-7 py-7 border-r border-border-lo');
 
   return (
@@ -85,7 +89,7 @@ export function ProfileSectionNav({ active, onPick, lastSaved }: Props) {
           ← Dashboard
         </Link>
         <div className="[font-family:var(--f-mono)] text-[8px] tracking-[0.14em] uppercase text-text-lo">
-          {lastSaved ? `Saved · ${lastSaved}` : 'Autosaving'}
+          {dirty ? t('unsaved') : lastSaved ? t('saved', { time: lastSaved }) : t('clean')}
         </div>
       </div>
     </nav>

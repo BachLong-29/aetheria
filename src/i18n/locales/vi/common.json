@@ -640,6 +640,11 @@
     }
   },
   "profile": {
+    "status": {
+      "unsaved": "Chưa lưu thay đổi",
+      "saved": "Đã lưu · {time}",
+      "clean": "Chưa có thay đổi"
+    },
     "revealModal": {
       "sealOverlay": {
         "identitySealed": "BẢN NGÃ ĐÃ NIÊM ẤN",

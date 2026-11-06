@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect, useCallback, startTransition, type ReactNode } from 'react';
+import { useTranslations } from 'next-intl';
+import { useState, useEffect, useCallback, useMemo, startTransition, type ReactNode } from 'react';
 import { cn } from '@/libs/utils';
 import { Button } from '@/components/ui';
 import { useProfile } from '../hooks/useProfile';
@@ -135,6 +136,7 @@ export function ProfilePage() {
   const { data, isLoading } = useProfile();
   const updateMutation = useUpdateProfile();
   const { setTheme } = useTheme();
+  const tStatus = useTranslations('profile.status');
 
   const [form, setForm] = useState<ProfileFormData>(DEFAULT_PROFILE_FORM);
   const [activeSection, setActiveSection] = useState('identity');
@@ -142,6 +144,13 @@ export function ProfilePage() {
   const [toast, setToast] = useState(false);
   const [lastSaved, setLastSaved] = useState<string | null>(null);
   const [navOpen, setNavOpen] = useState(false);
+
+  // What the server holds, shown against the form to tell whether there is anything to save.
+  const saved = useMemo(
+    () => (data ? mergeProfileToForm(data.profile, data.settings) : DEFAULT_PROFILE_FORM),
+    [data],
+  );
+  const dirty = JSON.stringify(form) !== JSON.stringify(saved);
 
   // Populate form once data loads
   useEffect(() => {
@@ -237,6 +246,7 @@ export function ProfilePage() {
               active={activeSection}
               onPick={handleSectionPickMobile}
               lastSaved={lastSaved}
+              dirty={dirty}
             />
           </div>
           {/* backdrop */}
@@ -310,6 +320,7 @@ export function ProfilePage() {
             active={activeSection}
             onPick={handleSectionPick}
             lastSaved={lastSaved}
+            dirty={dirty}
           />
         </div>
 
@@ -424,19 +435,18 @@ export function ProfilePage() {
               A draft self, waiting to be sealed.
             </div>
           </div>
-          <div className="flex gap-2 sm:gap-3">
-            {[{ label: 'AUTOSAVED' }, { label: 'VALIDATED' }].map(({ label }) => (
-              <div
-                key={label}
-                className="flex gap-[5px] items-center [font-family:var(--f-mono)] text-[9px] tracking-[0.14em] text-text-lo"
-              >
-                <span
-                  className="w-[6px] h-[6px] rounded-full flex-shrink-0"
-                  style={{ background: 'var(--gold)', boxShadow: '0 0 8px var(--gold)' }}
-                />
-                <span className="hidden sm:inline">{label}</span>
-              </div>
-            ))}
+          <div className="flex items-center gap-[5px] [font-family:var(--f-mono)] text-[9px] tracking-[0.14em] uppercase text-text-lo">
+            <span
+              className="w-[6px] h-[6px] rounded-full flex-shrink-0"
+              style={
+                dirty
+                  ? { background: 'var(--gold)', boxShadow: '0 0 8px var(--gold)' }
+                  : { background: 'var(--text-lo)' }
+              }
+            />
+            <span className="hidden sm:inline">
+              {dirty ? tStatus('unsaved') : tStatus('clean')}
+            </span>
           </div>
         </div>
 

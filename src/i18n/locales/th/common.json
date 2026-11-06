@@ -640,6 +640,11 @@
     }
   },
   "profile": {
+    "status": {
+      "unsaved": "มีการเปลี่ยนแปลงที่ยังไม่บันทึก",
+      "saved": "บันทึกแล้ว · {time}",
+      "clean": "ไม่มีการเปลี่ยนแปลง"
+    },
     "revealModal": {
       "sealOverlay": {
         "identitySealed": "ผนึกตัวตนแล้ว",

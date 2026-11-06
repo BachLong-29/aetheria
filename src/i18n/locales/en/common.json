@@ -640,6 +640,11 @@
     }
   },
   "profile": {
+    "status": {
+      "unsaved": "Unsaved changes",
+      "saved": "Saved · {time}",
+      "clean": "No changes"
+    },
     "revealModal": {
       "sealOverlay": {
         "identitySealed": "IDENTITY SEALED",
