@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { after } from 'next/server';
 
 import { FinanceCategoryModel } from '@/server/models/finance-category.model';
 import { NotificationModel } from '@/server/models/notification.model';
@@ -180,6 +181,16 @@ export async function generateCashLogNotifications(userId: string): Promise<void
   if (lastRun !== undefined && Date.now() - lastRun < REGEN_THROTTLE_MS) return;
   lastGeneratedAt.set(userId, Date.now());
 
+  // The queries run once the response has gone out, like the schedule generator: the list read
+  // must not wait on them. A reminder written here shows on the next read.
+  after(() =>
+    runCashLogGeneration(userId).catch((err) => {
+      console.error('[notifications] background cash-log generation failed', err);
+    }),
+  );
+}
+
+async function runCashLogGeneration(userId: string): Promise<void> {
   const uid = new mongoose.Types.ObjectId(userId);
   const setting = await UserSettingModel.findOne({ userId: uid }).lean();
   if (!setting?.cashLog?.enabled) return;
