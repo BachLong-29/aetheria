@@ -8,30 +8,25 @@ import { cn } from '@/libs/utils';
 import { Modal, ModalBody, ModalFoot, ModalHead } from '@/components/ui/Modal';
 import { useCategories } from '@/features/dashboard/hooks/useCategories';
 import { useDeleteTask } from '@/features/dashboard/hooks/useDeleteTask';
-import type { PaginationMeta } from '@/types';
+import type { TaskPageMeta, TaskStatus } from '@/types';
 
+import { UI_TASK_XP } from '../../data/adapters';
 import { type UITask } from '../../data/mock';
 import { TaskAllTable, COL_DEFS, DEFAULT_VISIBLE_COLS, type ColDef } from './TaskAllTable';
 import type { ColKey } from './TaskAllRow';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-type SortByLocal = 'deadline' | 'xp' | 'priority' | 'title';
-type StatusFilter = 'all' | 'todo' | 'in_progress' | 'pending' | 'waiting' | 'done';
-
-const PRIORITY_ORDER: Record<string, number> = {
-  critical: 0,
-  high: 1,
-  medium: 2,
-  low: 3,
-};
+/** Orders the whole list on the server, not just the loaded page. */
+export type AllViewSort = 'deadline' | 'title';
+export type AllViewStatus = 'all' | TaskStatus;
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 interface TaskAllViewPagination {
   offset: number;
   limit: number;
-  meta: PaginationMeta | undefined;
+  meta: TaskPageMeta | undefined;
   isFetching: boolean;
   onPrev: () => void;
   onNext: () => void;
@@ -42,15 +37,26 @@ interface TaskAllViewProps {
   onEdit?: (task: UITask) => void;
   /** Server-side pagination for `tasks` — omit to render everything with no footer. */
   pagination?: TaskAllViewPagination;
+  /** Sort and status filter live in the parent: they are request params, and changing one resets the page. */
+  sortBy: AllViewSort;
+  onSortChange: (sort: AllViewSort) => void;
+  statusFilter: AllViewStatus;
+  onStatusChange: (status: AllViewStatus) => void;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function TaskAllView({ tasks, onEdit, pagination }: TaskAllViewProps) {
+export function TaskAllView({
+  tasks,
+  onEdit,
+  pagination,
+  sortBy,
+  onSortChange,
+  statusFilter,
+  onStatusChange,
+}: TaskAllViewProps) {
   const t = useTranslations('tasks');
   const tCommon = useTranslations('common');
-  const [sortBy, setSortBy] = useState<SortByLocal>('deadline');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [deletingTask, setDeletingTask] = useState<UITask | null>(null);
   const [visibleCols, setVisibleCols] = useState<Set<ColKey>>(DEFAULT_VISIBLE_COLS);
   const [colPickerOpen, setColPickerOpen] = useState(false);
@@ -59,13 +65,11 @@ export function TaskAllView({ tasks, onEdit, pagination }: TaskAllViewProps) {
 
   const { mutate: deleteTask } = useDeleteTask();
   const { data: categories = [] } = useCategories();
-  const sortByOptions: { id: SortByLocal; label: string }[] = [
+  const sortByOptions: { id: AllViewSort; label: string }[] = [
     { id: 'deadline', label: t('taskAllView.sort.deadline') },
-    { id: 'xp', label: t('taskAllView.sort.xp') },
-    { id: 'priority', label: t('taskAllView.sort.priority') },
     { id: 'title', label: t('taskAllView.sort.title') },
   ];
-  const statusFilterOptions: { id: StatusFilter; label: string; color?: string }[] = [
+  const statusFilterOptions: { id: AllViewStatus; label: string; color?: string }[] = [
     { id: 'all', label: t('taskAllView.status.all') },
     { id: 'todo', label: t('taskAllView.status.todo') },
     { id: 'in_progress', label: t('taskAllView.status.inProgress'), color: 'var(--cyan)' },
@@ -113,28 +117,16 @@ export function TaskAllView({ tasks, onEdit, pagination }: TaskAllViewProps) {
 
   const taskOnly = useMemo(() => tasks.filter((t) => t.source === 'task'), [tasks]);
 
-  const sorted = useMemo(() => {
-    let list = [...taskOnly];
-
-    if (statusFilter !== 'all') {
-      list = list.filter((t) => t.status === statusFilter);
-    }
-
-    list.sort((a, b) => {
-      if (sortBy === 'xp') return b.xp - a.xp;
-      if (sortBy === 'priority')
-        return (PRIORITY_ORDER[a.priority] ?? 9) - (PRIORITY_ORDER[b.priority] ?? 9);
-      if (sortBy === 'title') return a.title.localeCompare(b.title);
-      return a.day - b.day;
-    });
-
-    return list;
-  }, [taskOnly, sortBy, statusFilter]);
-
-  const total = taskOnly.length;
-  const done = taskOnly.filter((t) => t.status === 'done').length;
-  const xpTotal = taskOnly.reduce((s, t) => s + t.xp, 0);
-  const xpEarned = taskOnly.filter((t) => t.status === 'done').reduce((s, t) => s + t.xp, 0);
+  // The server already filtered and ordered the page; the counts cover the whole list.
+  const counts = pagination?.meta?.statusCounts;
+  const countOf = (status: AllViewStatus) =>
+    status === 'all'
+      ? Object.values(counts ?? {}).reduce((sum, n) => sum + n, 0)
+      : (counts?.[status] ?? 0);
+  const total = countOf('all');
+  const done = countOf('done');
+  const xpTotal = total * UI_TASK_XP;
+  const xpEarned = done * UI_TASK_XP;
 
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
@@ -169,7 +161,7 @@ export function TaskAllView({ tasks, onEdit, pagination }: TaskAllViewProps) {
               key={opt.id}
               type="button"
               className={cn(segBtn, sortBy === opt.id && segBtnActive)}
-              onClick={() => setSortBy(opt.id)}
+              onClick={() => onSortChange(opt.id)}
             >
               {opt.label}
             </button>
@@ -200,7 +192,7 @@ export function TaskAllView({ tasks, onEdit, pagination }: TaskAllViewProps) {
                       colPickerRow,
                       sortBy === opt.id ? 'text-[var(--gold)] font-bold' : 'text-[var(--text-mid)]',
                     )}
-                    onClick={() => setSortBy(opt.id)}
+                    onClick={() => onSortChange(opt.id)}
                   >
                     <span className="w-3 shrink-0 text-[var(--gold)]">
                       {sortBy === opt.id ? '✓' : ''}
@@ -232,8 +224,7 @@ export function TaskAllView({ tasks, onEdit, pagination }: TaskAllViewProps) {
       <div className={statusBar}>
         {statusFilterOptions.map((opt) => {
           const active = statusFilter === opt.id;
-          const count =
-            opt.id === 'all' ? taskOnly.length : taskOnly.filter((t) => t.status === opt.id).length;
+          const count = countOf(opt.id);
           return (
             <button
               key={opt.id}
@@ -248,7 +239,7 @@ export function TaskAllView({ tasks, onEdit, pagination }: TaskAllViewProps) {
                     }
                   : undefined
               }
-              onClick={() => setStatusFilter(opt.id)}
+              onClick={() => onStatusChange(opt.id)}
             >
               {opt.label}
               <span className={cn(statusCount, active && 'opacity-100')}>{count}</span>
@@ -259,7 +250,7 @@ export function TaskAllView({ tasks, onEdit, pagination }: TaskAllViewProps) {
 
       {/* ── Table ────────────────────────────────────────────────────────── */}
       <TaskAllTable
-        sorted={sorted}
+        sorted={taskOnly}
         visibleCols={visibleCols}
         catMap={catMap}
         onEdit={onEdit}

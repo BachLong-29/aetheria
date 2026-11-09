@@ -739,8 +739,6 @@
       "sort": {
         "label": "Sort",
         "deadline": "Deadline",
-        "xp": "XP",
-        "priority": "Priority",
         "title": "Title",
         "mobileTitle": "Sort by"
       },

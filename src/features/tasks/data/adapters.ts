@@ -122,6 +122,9 @@ const COLOR_TO_CAT: Record<string, TaskCat> = {
  *                   Drives the slot + the card's displayed time. When omitted the task
  *                   falls back to a default slot (morning / current-hour for today).
  */
+/** What the UI shows a task as worth; the API pays its own amount on completion. */
+export const UI_TASK_XP = 100;
+
 export function taskToUITask(t: Task, taskLog?: TaskLog, blockTime?: string): UITask {
   const startOffset = dayOffset(t.startDate);
   const endOffset = t.endDate ? dayOffset(t.endDate) : startOffset;
@@ -169,7 +172,7 @@ export function taskToUITask(t: Task, taskLog?: TaskLog, blockTime?: string): UI
     cat: COLOR_TO_CAT[t.color] ?? 'focus',
     diff: 'B',
     priority: 'medium',
-    xp: 100,
+    xp: UI_TASK_XP,
     coins: 25,
     est: t.duration ?? 60,
     deadline,

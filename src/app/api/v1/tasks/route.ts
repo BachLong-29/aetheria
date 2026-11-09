@@ -14,8 +14,7 @@ import {
   unauthorizedResponse,
 } from '@/server';
 import { validateBody, validateSearchParams } from '@/server/validate';
-import type { Task } from '@/types/task';
-import type { PaginationMeta } from '@/types/api';
+import { TASK_STATUSES, type Task, type TaskPageMeta, type TaskStatus } from '@/types/task';
 import type { ITask } from '@/server/models/task.model';
 import { diacriticRegex } from '@/libs/utils';
 
@@ -60,8 +59,10 @@ const querySchema = z.object({
    * Omit entirely for the legacy "everything matching the filter" behavior.
    */
   offset: z.coerce.number().int().min(0).optional(),
-  /** Paginated order: by start date (default), or by creation time, newest or oldest first. */
-  sort: z.enum(['startDate', 'createdAt', '-createdAt']).optional(),
+  /** Filter to one status. Combinable with pagination. */
+  status: z.enum(TASK_STATUSES as [TaskStatus, ...TaskStatus[]]).optional(),
+  /** Paginated order: by start date (default), by name, or by creation time, newest or oldest first. */
+  sort: z.enum(['startDate', 'name', 'createdAt', '-createdAt']).optional(),
 });
 
 /** Overlap filter for tasks whose [startDate, endDate] range intersects [start, end]. */
@@ -159,21 +160,37 @@ export const GET = asyncHandler(async (req: NextRequest) => {
     const limit = query?.limit ?? 20;
     const offset = query.offset;
 
-    const [tasks, total] = await Promise.all([
+    // The status chips show how many tasks each status has under the other filters, so the
+    // counts are taken before `status` narrows the list itself.
+    const countFilter = { ...filter };
+    if (query.status) filter.status = query.status;
+
+    // `_id` breaks ties so a page never repeats or skips a row when many share a sort key.
+    const order: Record<string, 1 | -1> =
+      query.sort === 'createdAt'
+        ? { createdAt: 1 }
+        : query.sort === '-createdAt'
+          ? { createdAt: -1 }
+          : query.sort === 'name'
+            ? { name: 1 }
+            : { startDate: 1 };
+
+    const [tasks, total, ...counts] = await Promise.all([
       TaskModel.find(filter)
-        .sort(
-          query.sort === 'createdAt'
-            ? { createdAt: 1 }
-            : query.sort === '-createdAt'
-              ? { createdAt: -1 }
-              : { startDate: 1 },
-        )
+        .sort({ ...order, _id: 1 })
+        .collation({ locale: 'en', strength: 2 })
         .skip(offset)
         .limit(limit),
       TaskModel.countDocuments(filter),
+      ...TASK_STATUSES.map((status) => TaskModel.countDocuments({ ...countFilter, status })),
     ]);
 
-    const meta: PaginationMeta = {
+    const statusCounts = Object.fromEntries(
+      TASK_STATUSES.map((status, i) => [status, counts[i] ?? 0]),
+    ) as Record<TaskStatus, number>;
+
+    const meta: TaskPageMeta = {
+      statusCounts,
       total,
       page: Math.floor(offset / limit) + 1,
       limit,

@@ -23,7 +23,7 @@ import { type TaskDiff, type UITask } from '../data/mock';
 import { questToUITask, parseDateLocal, taskToUITask, type QuestLike } from '../data/adapters';
 import { PageHeader, type ViewMode } from './PageHeader';
 import { TaskDayView } from './day/TaskDayView';
-import { TaskAllView } from './all/TaskAllView';
+import { TaskAllView, type AllViewSort, type AllViewStatus } from './all/TaskAllView';
 import { matchesQuery } from '@/libs/utils';
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -155,9 +155,12 @@ export function TaskManagement({ initialSearch = '' }: { initialSearch?: string 
   const allViewSearch = search.trim() || undefined;
 
   // Filters changed — jump back to page 1 (render-phase reset, no extra effect pass).
-  const [prevAllViewFilters, setPrevAllViewFilters] = useState([allViewTagId, allViewSearch]);
-  if (prevAllViewFilters[0] !== allViewTagId || prevAllViewFilters[1] !== allViewSearch) {
-    setPrevAllViewFilters([allViewTagId, allViewSearch]);
+  const [allViewSort, setAllViewSort] = useState<AllViewSort>('deadline');
+  const [allViewStatus, setAllViewStatus] = useState<AllViewStatus>('all');
+  const allViewFilters = [allViewTagId, allViewSearch, allViewSort, allViewStatus];
+  const [prevAllViewFilters, setPrevAllViewFilters] = useState(allViewFilters);
+  if (prevAllViewFilters.some((value, i) => value !== allViewFilters[i])) {
+    setPrevAllViewFilters(allViewFilters);
     if (allViewOffset !== 0) setAllViewOffset(0);
   }
 
@@ -166,6 +169,8 @@ export function TaskManagement({ initialSearch = '' }: { initialSearch?: string 
     limit: ALL_VIEW_PAGE_SIZE,
     q: allViewSearch,
     tagId: allViewTagId,
+    status: allViewStatus === 'all' ? undefined : allViewStatus,
+    sort: allViewSort === 'title' ? 'name' : 'startDate',
   });
   const allViewTasks = useMemo(
     () => (allViewPage?.tasks ?? []).map((t) => taskToUITask(t)),
@@ -231,6 +236,10 @@ export function TaskManagement({ initialSearch = '' }: { initialSearch?: string 
             <TaskAllView
               tasks={allViewTasks}
               onEdit={onEdit}
+              sortBy={allViewSort}
+              onSortChange={setAllViewSort}
+              statusFilter={allViewStatus}
+              onStatusChange={setAllViewStatus}
               pagination={{
                 offset: allViewOffset,
                 limit: ALL_VIEW_PAGE_SIZE,

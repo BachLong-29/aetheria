@@ -1,6 +1,15 @@
+import type { PaginationMeta } from './api';
 import type { TaskProgress } from './schedule-block';
 
 export type TaskStatus = 'todo' | 'in_progress' | 'pending' | 'waiting' | 'done';
+
+export const TASK_STATUSES: readonly TaskStatus[] = [
+  'todo',
+  'in_progress',
+  'pending',
+  'waiting',
+  'done',
+];
 export type TaskColor = 'gold' | 'mint' | 'violet' | 'cyan' | 'rose' | 'amber' | 'blue';
 
 export interface Task {
@@ -72,4 +81,9 @@ export interface UpdateTaskPayload {
   dependencies?: string[];
   active?: boolean;
   attachments?: string[];
+}
+
+/** Page meta of `GET /tasks?offset=` — counts ignore the `status` filter so every chip stays accurate. */
+export interface TaskPageMeta extends PaginationMeta {
+  statusCounts: Record<TaskStatus, number>;
 }

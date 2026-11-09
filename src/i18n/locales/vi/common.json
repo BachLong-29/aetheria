@@ -739,8 +739,6 @@
       "sort": {
         "label": "Sắp xếp",
         "deadline": "Hạn chót",
-        "xp": "XP",
-        "priority": "Ưu tiên",
         "title": "Tiêu đề",
         "mobileTitle": "Sắp xếp theo"
       },
