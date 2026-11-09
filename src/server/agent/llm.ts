@@ -40,9 +40,9 @@ export class LlmError extends Error {
 }
 
 const DEFAULT_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/openai';
-const DEFAULT_MODEL = 'gemini-3.8-flash';
+const DEFAULT_MODEL = 'gemini-3.5-flash-lite';
 /** Tried in order after `DEFAULT_MODEL` when it stays overloaded (only with the default config). */
-const DEFAULT_FALLBACKS = ['gemini-3.6-flash', 'gemini-3.5-flash-lite'];
+const DEFAULT_FALLBACKS: string[] = [];
 const TIMEOUT_MS = 30_000;
 
 /** `signal` aborts the call when the client gave up — stop, or the tab closed. */
@@ -92,8 +92,8 @@ export const chatCompletion: LlmCall = async (messages, tools, signal) => {
 
   const baseUrl = (process.env.LLM_BASE_URL ?? DEFAULT_BASE_URL).replace(/\/+$/, '');
   const primary = process.env.LLM_MODEL ?? DEFAULT_MODEL;
-  // `LLM_FALLBACK_MODEL` wins; with the stock Gemini config a built-in chain applies; with a
-  // custom `LLM_MODEL` and no fallback there is none, since model ids differ per provider.
+  // Only `LLM_FALLBACK_MODEL` adds a second model; model ids differ per provider, so there is
+  // no built-in chain.
   const configuredFallback = process.env.LLM_FALLBACK_MODEL;
   const chain = configuredFallback
     ? [configuredFallback]
