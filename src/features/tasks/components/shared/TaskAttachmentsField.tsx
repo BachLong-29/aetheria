@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 
+import { ImageLightbox } from '@/components/common/ImageLightbox';
 import { Upload } from '@/components/ui/Upload';
 import { apiClient } from '@/libs/axios';
 import type { ApiResponse } from '@/types';
@@ -160,22 +161,11 @@ export function TaskAttachmentsField({ value, onChange }: TaskAttachmentsFieldPr
 
       {/* Lightbox — full-screen image preview */}
       {lightbox && (
-        <div
-          className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/85 p-4 cursor-zoom-out"
-          onClick={() => setLightbox(null)}
-        >
-          <div className="relative w-full h-full max-w-[90vw] max-h-[90vh]">
-            <Image src={lightbox} alt="Attachment" fill sizes="90vw" className="object-contain" />
-          </div>
-          <button
-            type="button"
-            onClick={() => setLightbox(null)}
-            className="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/60 text-white text-[18px] leading-none flex items-center justify-center hover:bg-[var(--rose)] transition-colors cursor-pointer"
-            aria-label={t('taskForm.attachmentsField.close')}
-          >
-            ×
-          </button>
-        </div>
+        <ImageLightbox
+          src={lightbox}
+          closeLabel={t('taskForm.attachmentsField.close')}
+          onClose={() => setLightbox(null)}
+        />
       )}
     </div>
   );
