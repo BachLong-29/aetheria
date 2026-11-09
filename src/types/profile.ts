@@ -1,4 +1,3 @@
-export type QuestDifficulty = 'gentle' | 'rising' | 'harsh';
 export type ThemePreference = 'dark' | 'light' | 'system';
 
 export interface HeroStats {
@@ -40,16 +39,8 @@ export interface UserProfileData {
 export interface UserSettingData {
   id: string;
   userId: string;
-  morningRitual: boolean;
-  nightlyReview: boolean;
-  streakProtection: number;
-  questDifficulty: QuestDifficulty;
-  seasonalRites: boolean;
-  autoReclaim: boolean;
-  language: string;
   timezone: string;
   theme: ThemePreference;
-  compactMode: boolean;
   dailyCapacityMinutes: number;
   cashLogEnabled: boolean;
   /** `HH:MM`, read in `timezone`. */
@@ -79,12 +70,6 @@ export interface ProfileFormData {
   statPool: number;
   primaryFocus: string[];
   badges: string[];
-  morningRitual: boolean;
-  nightlyReview: boolean;
-  streakProtection: number;
-  questDifficulty: QuestDifficulty;
-  seasonalRites: boolean;
-  autoReclaim: boolean;
   theme: ThemePreference;
   dailyCapacityMinutes: number;
   timezone: string;
@@ -114,12 +99,6 @@ export const DEFAULT_PROFILE_FORM: ProfileFormData = {
   statPool: 30,
   primaryFocus: ['mind', 'craft'],
   badges: [],
-  morningRitual: true,
-  nightlyReview: true,
-  streakProtection: 1,
-  questDifficulty: 'rising',
-  seasonalRites: true,
-  autoReclaim: false,
   theme: 'system',
   dailyCapacityMinutes: 600,
   timezone: 'UTC',
@@ -147,12 +126,6 @@ export function mergeProfileToForm(
     statPool: profile.statPool,
     primaryFocus: [...profile.primaryFocus],
     badges: [...profile.badges],
-    morningRitual: settings.morningRitual,
-    nightlyReview: settings.nightlyReview,
-    streakProtection: settings.streakProtection,
-    questDifficulty: settings.questDifficulty,
-    seasonalRites: settings.seasonalRites,
-    autoReclaim: settings.autoReclaim,
     theme: settings.theme,
     dailyCapacityMinutes: settings.dailyCapacityMinutes,
     timezone: settings.timezone,

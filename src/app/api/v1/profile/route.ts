@@ -41,16 +41,8 @@ const updateSchema = z.object({
   badges: z.array(z.string()).max(4).optional(),
   // level, xp, xpNext, streak, coins, gems and rank are not accepted here: the server pays and
   // levels the hero (see `awardProgress`), so a client can't write its own balance.
-  morningRitual: z.boolean().optional(),
-  nightlyReview: z.boolean().optional(),
-  streakProtection: z.number().min(0).max(3).optional(),
-  questDifficulty: z.enum(['gentle', 'rising', 'harsh']).optional(),
-  seasonalRites: z.boolean().optional(),
-  autoReclaim: z.boolean().optional(),
-  language: z.string().max(10).optional(),
   timezone: z.string().max(60).optional(),
   theme: z.enum(['dark', 'light', 'system']).optional(),
-  compactMode: z.boolean().optional(),
   dailyCapacityMinutes: z.number().min(60).max(1440).optional(),
   cashLogEnabled: z.boolean().optional(),
   cashLogTime: z
@@ -105,16 +97,8 @@ async function serializeSetting(s: IUserSetting): Promise<UserSettingData> {
   return {
     id: s._id.toString(),
     userId: s.userId.toString(),
-    morningRitual: s.morningRitual,
-    nightlyReview: s.nightlyReview,
-    streakProtection: s.streakProtection,
-    questDifficulty: s.questDifficulty,
-    seasonalRites: s.seasonalRites,
-    autoReclaim: s.autoReclaim,
-    language: s.language,
     timezone: s.timezone,
     theme: s.theme,
-    compactMode: s.compactMode,
     dailyCapacityMinutes: s.schedule?.dailyCapacityMinutes ?? 600,
     cashLogEnabled: s.cashLog?.enabled ?? true,
     cashLogTime: s.cashLog?.time ?? '22:00',
@@ -192,18 +176,7 @@ export const PUT = asyncHandler(async (req: NextRequest) => {
     'badges',
   ] as const;
 
-  const settingKeys = [
-    'morningRitual',
-    'nightlyReview',
-    'streakProtection',
-    'questDifficulty',
-    'seasonalRites',
-    'autoReclaim',
-    'language',
-    'timezone',
-    'theme',
-    'compactMode',
-  ] as const;
+  const settingKeys = ['timezone', 'theme'] as const;
   if (data.cashLogEnabled !== undefined) settingFields['cashLog.enabled'] = data.cashLogEnabled;
   if (data.cashLogTime !== undefined) settingFields['cashLog.time'] = data.cashLogTime;
   if (data.cashLogCategoryIds !== undefined) {
