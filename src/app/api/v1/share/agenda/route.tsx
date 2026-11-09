@@ -20,6 +20,7 @@ import {
   ogMaxRows,
 } from '@/features/share/constants/og-palette';
 import { groupByDay } from '@/features/share/utils/agenda-text';
+import { OG_FONT_FAMILY, loadOgFonts } from '@/features/share/utils/og-fonts';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -111,6 +112,7 @@ export const GET = asyncHandler(async (req: NextRequest) => {
         flexDirection: 'column',
         background: OG_BG,
         padding: PADDING,
+        fontFamily: OG_FONT_FAMILY,
         fontSize: 28,
         color: OG_TEXT_HI,
       }}
@@ -205,6 +207,7 @@ export const GET = asyncHandler(async (req: NextRequest) => {
     {
       width: WIDTH,
       height: cardHeight(shown, isWeek ? visibleDays.length : 0, overflow > 0),
+      fonts: await loadOgFonts(),
     },
   );
 });
