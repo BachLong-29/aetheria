@@ -31,8 +31,13 @@ export function groupByDay(items: CalendarItem[]): AgendaDay[] {
     }));
 }
 
-export function countDone(items: CalendarItem[]): number {
-  return items.filter((item) => item.status === 'done').length;
+/**
+ * The `done/total` line. Events are left out of both numbers: they are never `done`, so counting
+ * them would keep a week with meetings from ever reaching full.
+ */
+export function countTally(items: CalendarItem[]): { done: number; total: number } {
+  const tracked = items.filter((item) => item.sourceType !== 'event');
+  return { done: tracked.filter((item) => item.status === 'done').length, total: tracked.length };
 }
 
 export interface AgendaTextInput {

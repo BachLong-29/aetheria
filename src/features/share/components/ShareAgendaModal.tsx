@@ -15,7 +15,7 @@ import { apiClient } from '@/libs/axios';
 import { useUIStore } from '@/stores/ui.store';
 
 import { ogMaxRows } from '../constants/og-palette';
-import { buildAgendaText, countDone } from '../utils/agenda-text';
+import { buildAgendaText, countTally } from '../utils/agenda-text';
 
 type Scope = 'day' | 'week';
 
@@ -65,8 +65,8 @@ export function ShareAgendaModal() {
     return `${range.format(new Date(`${from}T00:00:00`))} – ${range.format(new Date(`${to}T00:00:00`))}`;
   }, [scope, from, to, locale]);
 
-  const summaryLabel =
-    items.length > 0 ? t('summary', { done: countDone(items), total: items.length }) : undefined;
+  const tally = countTally(items);
+  const summaryLabel = tally.total > 0 ? t('summary', tally) : undefined;
   const emptyLabel = scope === 'day' ? t('emptyDay') : t('emptyWeek');
 
   const text = useMemo(
