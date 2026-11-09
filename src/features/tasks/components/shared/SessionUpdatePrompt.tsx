@@ -7,10 +7,14 @@ import { Modal, ModalBody, ModalFoot, ModalHead } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { useUpdateScheduleBlock } from '@/features/schedule/hooks/useScheduleBlocks';
 import type { PlannerTask } from '@/features/schedule/components/SessionPlanner';
+import type { SessionMove } from '../../utils/session-moves';
 
 export interface SessionUpdateTarget {
-  /** Blocks belonging to the task — carried over so the move needs no refetch. */
-  blockIds: string[];
+  /**
+   * Where each session of the task goes — worked out before the date was saved, from the
+   * sessions' own days, so the move needs no refetch and keeps the gaps between them.
+   */
+  moves: SessionMove[];
   plannerData: PlannerTask;
   /**
    * False when the sessions are stale for some other reason than the day moving
@@ -36,8 +40,8 @@ interface Props {
 
 /**
  * Shown after a task's date or duration changes while it still has scheduled
- * sessions pinned to the old day. Offers the common case — drop them on the new
- * start date — as one tap, with the planner as the fallback.
+ * sessions pinned to the old day. Offers the common case — shift them by the same
+ * number of days as the start date — as one tap, with the planner as the fallback.
  */
 export function SessionUpdatePrompt({ target, onClose, onManage }: Props) {
   const t = useTranslations('tasks');
@@ -53,9 +57,7 @@ export function SessionUpdatePrompt({ target, onClose, onManage }: Props) {
     if (!target) return;
     setFailed(false);
     try {
-      await Promise.all(
-        target.blockIds.map((id) => updateBlock({ id, date: target.plannerData.startDate })),
-      );
+      await Promise.all(target.moves.map(({ id, date }) => updateBlock({ id, date })));
       close();
     } catch {
       // Stay open so the user can retry or fall back to the planner.
@@ -70,12 +72,12 @@ export function SessionUpdatePrompt({ target, onClose, onManage }: Props) {
         <p className="text-[12px] text-[var(--text-hi)] leading-relaxed">
           {target?.bulkTaskCount
             ? t.rich('overdueReview.bulkSessionMessage', {
-                count: target.blockIds.length,
+                count: target.moves.length,
                 tasks: target.bulkTaskCount,
                 strong: (chunks) => <strong>{chunks}</strong>,
               })
             : t.rich('editModal.blockWarning.message', {
-                count: target?.blockIds.length ?? 0,
+                count: target?.moves.length ?? 0,
                 strong: (chunks) => <strong>{chunks}</strong>,
               })}
         </p>

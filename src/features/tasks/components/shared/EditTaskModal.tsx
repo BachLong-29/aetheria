@@ -16,6 +16,7 @@ import { useTaskBlocks } from '@/features/schedule/hooks/useScheduleBlocks';
 
 import { parseDateLocal } from '../../data/adapters';
 import type { UITask } from '../../data/mock';
+import { planSessionMoves } from '../../utils/session-moves';
 import { SessionUpdatePrompt, type SessionUpdateTarget } from './SessionUpdatePrompt';
 import { TaskForm, type TaskFormValues, type TaskFormHandle } from './TaskForm';
 
@@ -182,7 +183,11 @@ export function EditTaskModal({ task, open, onClose, onSave, saving }: EditTaskM
       } else if (needsBlockWarning) {
         // Existing blocks may be out of sync — show warning modal first
         setBlockWarning({
-          blockIds: blocks.map((b) => b.id),
+          moves: planSessionMoves(
+            blocks,
+            task.startDate,
+            effectiveStartDate ?? task.startDate ?? '',
+          ),
           // Only a duration change leaves the sessions on the right day already.
           dateMoved: startDateMoved,
           plannerData: {

@@ -6,6 +6,7 @@ import { useUpdateTask } from '@/features/dashboard/hooks/useUpdateTask';
 import { apiClient } from '@/libs/axios';
 import type { ApiResponse, ScheduleBlock } from '@/types';
 
+import { planSessionMoves, type SessionMove } from '../utils/session-moves';
 import type { OverdueItem } from './useOverdueReview';
 
 export interface RescheduleAllResult {
@@ -13,8 +14,8 @@ export interface RescheduleAllResult {
   movedIds: string[];
   /** Tasks that failed and are still overdue. */
   failedCount: number;
-  /** Scheduled sessions of the moved tasks, still pinned to their old days. */
-  blockIds: string[];
+  /** Where each scheduled session of the moved tasks goes; they are still on their old days. */
+  moves: SessionMove[];
 }
 
 /**
@@ -45,11 +46,17 @@ export function useRescheduleAllOverdue() {
             ),
           ),
         );
-        const blockIds = blockLists.flatMap((r) =>
-          r.status === 'fulfilled' ? (r.value.data.data ?? []).map((b) => b.id) : [],
+        const moves = blockLists.flatMap((r, i) =>
+          r.status === 'fulfilled'
+            ? planSessionMoves(
+                r.value.data.data ?? [],
+                items.find((item) => item.id === movedIds[i])?.startDate,
+                newStartDate,
+              )
+            : [],
         );
 
-        return { movedIds, failedCount: items.length - movedIds.length, blockIds };
+        return { movedIds, failedCount: items.length - movedIds.length, moves };
       } finally {
         setIsPending(false);
       }

@@ -88,3 +88,15 @@ export function taskOccursOnDayOffset(
 
   return t.day === offset;
 }
+
+/** Whole days from `from` to `to` (both `YYYY-MM-DD`); negative when `to` is earlier. */
+export function daysBetween(from: string, to: string): number {
+  return Math.round((parseLocalDate(to).getTime() - parseLocalDate(from).getTime()) / 86400000);
+}
+
+/** `dateStr` moved by `n` days, as `YYYY-MM-DD`. */
+export function shiftDate(dateStr: string, n: number): string {
+  const d = parseLocalDate(dateStr);
+  d.setDate(d.getDate() + n);
+  return toLocalDate(d);
+}

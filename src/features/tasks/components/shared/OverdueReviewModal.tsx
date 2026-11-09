@@ -13,6 +13,7 @@ import { useTaskBlocks } from '@/features/schedule/hooks/useScheduleBlocks';
 import { cn } from '@/libs/utils';
 
 import type { OverdueItem } from '../../hooks/useOverdueReview';
+import { planSessionMoves, type SessionMove } from '../../utils/session-moves';
 import { SessionUpdatePrompt, type SessionUpdateTarget } from './SessionUpdatePrompt';
 import { Icon } from '@/components/common/Icon';
 
@@ -43,7 +44,7 @@ interface OverdueRowProps {
   /** Fires after a successful reschedule when the task already has scheduled
    * sessions, so the caller can prompt the user to go update them. Block ids
    * travel along so the prompt can move them without a second fetch. */
-  onNeedsScheduleUpdate: (plannerTask: PlannerTask, blockIds: string[]) => void;
+  onNeedsScheduleUpdate: (plannerTask: PlannerTask, moves: SessionMove[]) => void;
 }
 
 function OverdueRow({ item, onRemove, onNeedsScheduleUpdate }: OverdueRowProps) {
@@ -80,7 +81,7 @@ function OverdueRow({ item, onRemove, onNeedsScheduleUpdate }: OverdueRowProps) 
                 duration: item.duration,
                 startDate: newStartDate,
               },
-              blocks.map((b) => b.id),
+              planSessionMoves(blocks, item.startDate, newStartDate),
             );
           }
         },
@@ -268,11 +269,11 @@ function RescheduleAllBar({ items, onRemoveItem, onNeedsScheduleUpdate }: Resche
       setOpen(false);
       setDate(null);
     }
-    if (result.blockIds.length > 0) {
+    if (result.moves.length > 0) {
       const first = items.find((i) => i.id === result.movedIds[0]);
       if (!first) return;
       onNeedsScheduleUpdate({
-        blockIds: result.blockIds,
+        moves: result.moves,
         dateMoved: true,
         bulkTaskCount: result.movedIds.length,
         plannerData: { id: first.id, name: first.name, startDate: newStartDate },
@@ -385,8 +386,8 @@ export function OverdueReviewModal({ open, items, onRemoveItem, onDismiss }: Pro
                   key={item.id}
                   item={item}
                   onRemove={onRemoveItem}
-                  onNeedsScheduleUpdate={(plannerData, blockIds) =>
-                    setBlockWarning({ blockIds, plannerData, dateMoved: true })
+                  onNeedsScheduleUpdate={(plannerData, moves) =>
+                    setBlockWarning({ moves, plannerData, dateMoved: true })
                   }
                 />
               ))}

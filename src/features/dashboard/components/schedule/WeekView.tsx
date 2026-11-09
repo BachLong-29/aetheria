@@ -40,6 +40,7 @@ import { DayActionMenu } from './DayActionMenu';
 import { OccurrenceModal } from '@/features/events/components/OccurrenceModal';
 import { TaskPickerModal } from './TaskPickerModal';
 import { SessionPlanner, type PlannerTask } from '@/features/schedule/components/SessionPlanner';
+import { planSessionMoves } from '@/features/tasks/utils/session-moves';
 import {
   SessionUpdatePrompt,
   type SessionUpdateTarget,
@@ -312,7 +313,11 @@ export function WeekView({
 
       // Captured before the write: the ids do not change, and after the
       // mutation invalidates, this list is briefly refetching.
-      const blockIds = weekTaskBlocks.filter((b) => b.sourceId === task.id).map((b) => b.id);
+      const moves = planSessionMoves(
+        weekTaskBlocks.filter((b) => b.sourceId === task.id),
+        task.startDate,
+        newStartDate,
+      );
 
       updateTask(
         { id: task.id, startDate: newStartDate, endDate: newEndDate },
@@ -320,9 +325,9 @@ export function WeekView({
           onSuccess: () => {
             // Sessions stay on the day they were booked, so a task dragged away
             // from them needs the same prompt the edit modal gives.
-            if (blockIds.length === 0) return;
+            if (moves.length === 0) return;
             setSessionPrompt({
-              blockIds,
+              moves,
               dateMoved: true,
               plannerData: {
                 id: task.id,
