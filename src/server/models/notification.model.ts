@@ -31,6 +31,11 @@ export interface INotification extends Document {
   dedupeKey?: string;
   /** Optional reference to an entity (e.g. task ObjectId as string) */
   entityId?: string;
+  /**
+   * When it starts showing. A reminder is created in the morning but only appears `lead` minutes
+   * before its item; unset means visible as soon as it exists.
+   */
+  notifyAt?: Date;
   expiresAt?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -83,6 +88,9 @@ const notificationSchema = new Schema<INotification>(
     },
     entityId: {
       type: String,
+    },
+    notifyAt: {
+      type: Date,
     },
     expiresAt: {
       type: Date,

@@ -14,6 +14,8 @@ interface PendingNotification {
   message: string;
   dedupeKey: string;
   expiresAt: Date;
+  /** Hidden until then; omit to show at once. */
+  notifyAt?: Date;
   entityId?: string;
 }
 
@@ -60,6 +62,13 @@ function toKey(d: Date): string {
 function nowMinutes(): number {
   const d = new Date();
   return d.getHours() * 60 + d.getMinutes();
+}
+
+/** `minutes` after midnight of `day` (never before it). */
+function minutesToday(day: Date, minutes: number): Date {
+  const d = new Date(day);
+  d.setHours(0, Math.max(0, minutes), 0, 0);
+  return d;
 }
 
 function timeToMinutes(time: string): number {
@@ -117,6 +126,7 @@ async function runScheduleNotificationGeneration(userId: string): Promise<void> 
       message: `Sắp tới lúc ${item.startTime}${lead ? ` (nhắc trước ${lead} phút)` : ''}`,
       dedupeKey: `reminder:${item.id}`,
       expiresAt: endOfToday,
+      notifyAt: minutesToday(today, start - lead),
     });
   }
 
@@ -179,6 +189,7 @@ async function runScheduleNotificationGeneration(userId: string): Promise<void> 
             message: n.message,
             dedupeKey: n.dedupeKey,
             expiresAt: n.expiresAt,
+            notifyAt: n.notifyAt,
             entityId: n.entityId,
             isRead: false,
           },

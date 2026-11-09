@@ -4,6 +4,7 @@ import { connectDB } from '@/libs/mongodb';
 import { getAuthUser } from '@/server/helpers/get-auth-user';
 import { NotificationModel, type NotificationType } from '@/server/models/notification.model';
 import { TaskModel } from '@/server/models/task.model';
+import { visibleNow } from '@/server/helpers/notification-visibility';
 import { enforceNotificationCap } from '@/server/services/notification-cleanup';
 import { generateCashLogNotifications } from '@/server/services/cash-log-notifications';
 import { generateScheduleNotifications } from '@/server/services/schedule-notifications';
@@ -35,8 +36,7 @@ export const GET = asyncHandler(async (req: NextRequest) => {
   const now = new Date();
   const notifications = await NotificationModel.find({
     userId: new mongoose.Types.ObjectId(user.sub),
-    dismissedAt: { $exists: false },
-    $or: [{ expiresAt: { $exists: false } }, { expiresAt: { $gt: now } }],
+    ...visibleNow(now),
   })
     .sort({ createdAt: -1 })
     .limit(20)

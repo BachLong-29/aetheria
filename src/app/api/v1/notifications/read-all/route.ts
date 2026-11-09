@@ -14,7 +14,12 @@ export const PUT = asyncHandler(async (req: NextRequest) => {
   await connectDB();
 
   await NotificationModel.updateMany(
-    { userId: new mongoose.Types.ObjectId(user.sub), isRead: false },
+    {
+      userId: new mongoose.Types.ObjectId(user.sub),
+      isRead: false,
+      // A reminder not yet due is not on screen, so "read all" must not swallow it.
+      $or: [{ notifyAt: { $exists: false } }, { notifyAt: { $lte: new Date() } }],
+    },
     { $set: { isRead: true } },
   );
 
