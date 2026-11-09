@@ -2,6 +2,7 @@ import { z } from 'zod';
 import type { NextRequest } from 'next/server';
 
 import { connectDB } from '@/libs/mongodb';
+import { REPEATED_DAY_MESSAGE, slotsHaveUniqueDays } from '@/server/helpers/habit-schedule';
 import { getAuthUser } from '@/server/helpers/get-auth-user';
 import { HabitModel } from '@/server/models/habit.model';
 import { asyncHandler, createdResponse, successResponse, unauthorizedResponse } from '@/server';
@@ -19,7 +20,10 @@ const scheduleEntrySchema = z.object({
 
 const createSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100),
-  schedule: z.array(scheduleEntrySchema).min(1, 'At least one schedule entry is required'),
+  schedule: z
+    .array(scheduleEntrySchema)
+    .min(1, 'At least one schedule entry is required')
+    .refine(slotsHaveUniqueDays, REPEATED_DAY_MESSAGE),
   duration: z.number().int().min(1).max(1440).optional(),
   note: z.string().max(500).optional(),
   tagId: z.string().min(1, 'Tag is required'),

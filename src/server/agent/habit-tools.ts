@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { REPEATED_DAY_MESSAGE, slotsHaveUniqueDays } from '@/server/helpers/habit-schedule';
 import { CategoryModel } from '@/server/models/category.model';
 import { HabitModel } from '@/server/models/habit.model';
 import { HabitLogModel } from '@/server/models/habit-log.model';
@@ -27,7 +28,10 @@ const scheduleArg = z
     }),
   )
   .min(1)
-  .describe('When the habit happens: one entry per time of day, each with its weekdays');
+  .refine(slotsHaveUniqueDays, REPEATED_DAY_MESSAGE)
+  .describe(
+    'When the habit happens: one entry per time of day, each with its weekdays. A weekday can be in only one entry.',
+  );
 
 const habitId = z.string().min(1).describe('Habit id from list_habits');
 
