@@ -41,14 +41,18 @@ function monthsUntil(month: string, target: Date): number {
 
 /**
  * Goals with their funding progress for `month` — including how much of this month's share is
- * still unallocated, which is what drives the "allocate now" prompt on the overview.
+ * still unallocated, which is what drives the "allocate now" prompt on the overview. Archived goals
+ * are left out unless `includeArchived` — only the Goals page needs them, to offer a restore.
  */
 export async function listGoalsWithProgress(
   userId: string,
   month: string,
   today: string,
+  includeArchived = false,
 ): Promise<GoalWithProgress[]> {
-  const goals = await FinanceGoalModel.find({ userId, status: { $ne: 'archived' } })
+  const goals = await FinanceGoalModel.find(
+    includeArchived ? { userId } : { userId, status: { $ne: 'archived' } },
+  )
     .sort({ createdAt: 1 })
     .lean();
   if (goals.length === 0) return [];

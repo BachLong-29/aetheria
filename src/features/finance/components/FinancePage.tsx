@@ -269,7 +269,11 @@ export function FinancePage() {
         draft={quickDraft}
       />
 
-      <GoalContributionModal goal={contributingGoal} onClose={() => setContributingGoal(null)} />
+      <GoalContributionModal
+        goal={contributingGoal}
+        mode="add"
+        onClose={() => setContributingGoal(null)}
+      />
     </>
   );
 }

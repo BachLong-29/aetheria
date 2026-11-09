@@ -19,7 +19,7 @@ const createSchema = z.object({
   targetDate: z.string().regex(DAY_RE).optional(),
 });
 
-// GET /api/v1/finance/goals?month=YYYY-MM&today=YYYY-MM-DD
+// GET /api/v1/finance/goals?month=YYYY-MM&today=YYYY-MM-DD[&includeArchived=true]
 export const GET = asyncHandler(async (req: NextRequest) => {
   const user = getAuthUser(req);
   if (!user) return unauthorizedResponse();
@@ -33,7 +33,8 @@ export const GET = asyncHandler(async (req: NextRequest) => {
 
   await connectDB();
 
-  const goals = await listGoalsWithProgress(user.sub, month, today);
+  const includeArchived = searchParams.get('includeArchived') === 'true';
+  const goals = await listGoalsWithProgress(user.sub, month, today, includeArchived);
   return successResponse(goals);
 });
 

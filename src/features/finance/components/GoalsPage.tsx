@@ -15,6 +15,7 @@ import type { FinanceGoal, TaskColor } from '@/types';
 import { COLOR_CSS } from '../constants';
 import { useGoals } from '../hooks/useGoals';
 import { useDeleteGoal } from '../hooks/useDeleteGoal';
+import { useUpdateGoal } from '../hooks/useUpdateGoal';
 import { currentMonthKey, formatCurrency } from '../utils';
 import { FinancePageHeader } from './FinancePageHeader';
 import { GoalContributionModal } from './GoalContributionModal';
@@ -28,13 +29,19 @@ export function GoalsPage() {
   const reduceMotion = useReducedMotion();
 
   const month = currentMonthKey();
-  const { data: goals = [], isLoading } = useGoals(month);
+  const { data: allGoals = [], isLoading } = useGoals(month, true);
+  const goals = allGoals.filter((g) => g.status !== 'archived');
+  const archivedGoals = allGoals.filter((g) => g.status === 'archived');
   const deleteGoal = useDeleteGoal();
+  const updateGoal = useUpdateGoal();
   const addToast = useUIStore((s) => s.addToast);
 
   const [showForm, setShowForm] = useState(false);
   const [editingGoal, setEditingGoal] = useState<FinanceGoal | null>(null);
-  const [contributingGoal, setContributingGoal] = useState<FinanceGoal | null>(null);
+  const [contributing, setContributing] = useState<{
+    goal: FinanceGoal;
+    mode: 'add' | 'withdraw';
+  } | null>(null);
   const [deletingGoal, setDeletingGoal] = useState<FinanceGoal | null>(null);
 
   function handleEdit(goal: FinanceGoal) {
@@ -45,6 +52,26 @@ export function GoalsPage() {
   function handleAdd() {
     setEditingGoal(null);
     setShowForm(true);
+  }
+
+  function setArchived(goal: FinanceGoal, archived: boolean) {
+    updateGoal.mutate(
+      { id: goal.id, status: archived ? 'archived' : 'active' },
+      {
+        onSuccess: () =>
+          addToast({
+            type: 'success',
+            message: t(archived ? 'goals.archivedToast' : 'goals.restoredToast', {
+              goal: goal.name,
+            }),
+          }),
+        onError: () =>
+          addToast({
+            type: 'error',
+            message: t(archived ? 'goals.archiveFailed' : 'goals.restoreFailed'),
+          }),
+      },
+    );
   }
 
   function handleDeleteConfirm() {
@@ -182,14 +209,33 @@ export function GoalsPage() {
                         <div className="flex flex-wrap gap-1.5 border-t border-[var(--border)] pt-3">
                           <button
                             type="button"
-                            onClick={() => setContributingGoal(g)}
+                            onClick={() => setContributing({ goal: g, mode: 'add' })}
                             className={actionBtn}
                           >
                             ＋ {t('goals.contribute')}
                           </button>
+                          {g.currentAmount > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => setContributing({ goal: g, mode: 'withdraw' })}
+                              className={actionBtn}
+                            >
+                              − {t('goals.withdraw')}
+                            </button>
+                          )}
                           <button type="button" onClick={() => handleEdit(g)} className={actionBtn}>
                             ✎ {t('common.edit')}
                           </button>
+                          {!done && (
+                            <button
+                              type="button"
+                              onClick={() => setArchived(g, true)}
+                              disabled={updateGoal.isPending}
+                              className={actionBtn}
+                            >
+                              ▣ {t('goals.archive')}
+                            </button>
+                          )}
                           <button
                             type="button"
                             onClick={() => setDeletingGoal(g)}
@@ -203,6 +249,49 @@ export function GoalsPage() {
                   })}
                 </ul>
               )}
+
+              {archivedGoals.length > 0 && (
+                <details className="mt-4 rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--panel)]">
+                  <summary className="cursor-pointer select-none px-4 py-2.5 text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--text-mid)]">
+                    {t('goals.archived')} ({archivedGoals.length})
+                  </summary>
+                  <ul className="flex flex-col divide-y divide-[var(--border)] border-t border-[var(--border)]">
+                    {archivedGoals.map((g) => (
+                      <li key={g.id} className="flex flex-wrap items-center gap-2 px-4 py-2.5">
+                        <span className="text-[16px]">
+                          <Icon icon={g.icon} />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-[13px] font-bold text-[var(--text-hi)]">
+                            {g.name}
+                          </div>
+                          <div className="text-[10px] tabular-nums text-[var(--text-mid)]">
+                            {t('goals.saved', {
+                              current: formatCurrency(g.currentAmount),
+                              target: formatCurrency(g.targetAmount),
+                            })}
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setArchived(g, false)}
+                          disabled={updateGoal.isPending}
+                          className={actionBtn}
+                        >
+                          ↺ {t('goals.restore')}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeletingGoal(g)}
+                          className={`${actionBtn} hover:border-[var(--crimson)] hover:text-[var(--crimson)]`}
+                        >
+                          🗑 {t('common.delete')}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
             </div>
           </GoldPanel>
         </motion.div>
@@ -210,7 +299,11 @@ export function GoalsPage() {
 
       <GoalFormModal open={showForm} onClose={() => setShowForm(false)} goal={editingGoal} />
 
-      <GoalContributionModal goal={contributingGoal} onClose={() => setContributingGoal(null)} />
+      <GoalContributionModal
+        goal={contributing?.goal ?? null}
+        mode={contributing?.mode ?? 'add'}
+        onClose={() => setContributing(null)}
+      />
 
       <Modal open={!!deletingGoal} onClose={() => setDeletingGoal(null)} maxWidth="380px">
         <ModalHead tag={t('goals.deleteTag')} title={`🗑 ${t('goals.deleteTitle')}`} />

@@ -48,7 +48,7 @@ export const PATCH = asyncHandler(async (req: NextRequest, ctx) => {
   await syncGoalStatus(user.sub, goal._id.toString());
 
   const today = new Date().toISOString().substring(0, 10);
-  const goals = await listGoalsWithProgress(user.sub, today.substring(0, 7), today);
+  const goals = await listGoalsWithProgress(user.sub, today.substring(0, 7), today, true);
   return successResponse(goals.find((g) => g.id === goal._id.toString()) ?? null, 'Goal updated');
 });
 

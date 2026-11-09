@@ -118,8 +118,10 @@ export const financeEndpoints = {
   importBudgets: (payload: ImportBudgetsPayload) =>
     apiClient.post<ApiResponse<ImportBudgetsResult>>('/finance/budgets/import', payload),
 
-  listGoals: (month: string, today: string) =>
-    apiClient.get<ApiResponse<FinanceGoal[]>>(`/finance/goals?month=${month}&today=${today}`),
+  listGoals: (month: string, today: string, includeArchived = false) =>
+    apiClient.get<ApiResponse<FinanceGoal[]>>(
+      `/finance/goals?month=${month}&today=${today}${includeArchived ? '&includeArchived=true' : ''}`,
+    ),
 
   createGoal: (payload: CreateFinanceGoalPayload) =>
     apiClient.post<ApiResponse<FinanceGoal>>('/finance/goals', payload),
