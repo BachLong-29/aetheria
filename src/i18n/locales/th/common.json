@@ -740,6 +740,8 @@
         "label": "เรียง",
         "deadline": "กำหนดส่ง",
         "title": "ชื่อเรื่อง",
+        "newest": "ใหม่สุด",
+        "oldest": "เก่าสุด",
         "mobileTitle": "เรียงตาม"
       },
       "status": {

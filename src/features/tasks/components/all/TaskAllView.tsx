@@ -18,7 +18,15 @@ import type { ColKey } from './TaskAllRow';
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 /** Orders the whole list on the server, not just the loaded page. */
-export type AllViewSort = 'deadline' | 'title';
+export type AllViewSort = 'deadline' | 'title' | 'newest' | 'oldest';
+
+/** What each option asks `GET /tasks` for. Deadline is the start date the server sorts by. */
+export const ALL_VIEW_SORT_PARAM = {
+  deadline: 'startDate',
+  title: 'name',
+  newest: '-createdAt',
+  oldest: 'createdAt',
+} as const satisfies Record<AllViewSort, string>;
 export type AllViewStatus = 'all' | TaskStatus;
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -68,6 +76,8 @@ export function TaskAllView({
   const sortByOptions: { id: AllViewSort; label: string }[] = [
     { id: 'deadline', label: t('taskAllView.sort.deadline') },
     { id: 'title', label: t('taskAllView.sort.title') },
+    { id: 'newest', label: t('taskAllView.sort.newest') },
+    { id: 'oldest', label: t('taskAllView.sort.oldest') },
   ];
   const statusFilterOptions: { id: AllViewStatus; label: string; color?: string }[] = [
     { id: 'all', label: t('taskAllView.status.all') },

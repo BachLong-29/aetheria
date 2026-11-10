@@ -740,6 +740,8 @@
         "label": "Sort",
         "deadline": "Deadline",
         "title": "Title",
+        "newest": "Newest",
+        "oldest": "Oldest",
         "mobileTitle": "Sort by"
       },
       "status": {

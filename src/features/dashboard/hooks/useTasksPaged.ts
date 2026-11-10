@@ -15,7 +15,7 @@ interface UseTasksPagedParams {
   /** Filter to one status. */
   status?: TaskStatus;
   /** Server-side order; omit for start date. */
-  sort?: 'startDate' | 'name';
+  sort?: 'startDate' | 'name' | 'createdAt' | '-createdAt';
 }
 
 interface TasksPage {

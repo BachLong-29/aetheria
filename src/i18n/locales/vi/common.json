@@ -740,6 +740,8 @@
         "label": "Sắp xếp",
         "deadline": "Hạn chót",
         "title": "Tiêu đề",
+        "newest": "Mới nhất",
+        "oldest": "Cũ nhất",
         "mobileTitle": "Sắp xếp theo"
       },
       "status": {

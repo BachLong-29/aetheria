@@ -23,7 +23,12 @@ import { type TaskDiff, type UITask } from '../data/mock';
 import { questToUITask, parseDateLocal, taskToUITask, type QuestLike } from '../data/adapters';
 import { PageHeader, type ViewMode } from './PageHeader';
 import { TaskDayView } from './day/TaskDayView';
-import { TaskAllView, type AllViewSort, type AllViewStatus } from './all/TaskAllView';
+import {
+  ALL_VIEW_SORT_PARAM,
+  TaskAllView,
+  type AllViewSort,
+  type AllViewStatus,
+} from './all/TaskAllView';
 import { matchesQuery } from '@/libs/utils';
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -170,7 +175,7 @@ export function TaskManagement({ initialSearch = '' }: { initialSearch?: string 
     q: allViewSearch,
     tagId: allViewTagId,
     status: allViewStatus === 'all' ? undefined : allViewStatus,
-    sort: allViewSort === 'title' ? 'name' : 'startDate',
+    sort: ALL_VIEW_SORT_PARAM[allViewSort],
   });
   const allViewTasks = useMemo(
     () => (allViewPage?.tasks ?? []).map((t) => taskToUITask(t)),
