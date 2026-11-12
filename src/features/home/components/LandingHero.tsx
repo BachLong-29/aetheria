@@ -27,7 +27,11 @@ const embers = [
   { left: '90%', drift: '30px', duration: '16s', delay: '0.5s', color: '' },
 ] as const;
 
-const ticks = [0, 45, 90, 135, 180, 225, 270, 315];
+// The 24 Elder Futhark runes, three times round, one every 5° — close enough to read as a ring
+// of writing on the outer circle.
+const FUTHARK = 'ᚠᚢᚦᚨᚱᚲᚷᚹᚺᚾᛁᛃᛇᛈᛉᛊᛏᛒᛖᛗᛚᛜᛞᛟ';
+const RUNE_COUNT = 72;
+const runes = Array.from({ length: RUNE_COUNT }, (_, i) => FUTHARK[i % FUTHARK.length]);
 
 export function LandingHero() {
   const t = useTranslations('landing.hero');
@@ -105,8 +109,14 @@ export function LandingHero() {
         <div className="lp-hero-disc" />
         <div className="lp-hero-sigil">
           <div className="lp-sigil-ring r1">
-            {ticks.map((deg) => (
-              <div key={deg} className="lp-sigil-tick" style={{ transform: `rotate(${deg}deg)` }} />
+            {runes.map((rune, i) => (
+              <div
+                key={i}
+                className="lp-sigil-rune"
+                style={{ transform: `rotate(${(i * 360) / RUNE_COUNT}deg)` }}
+              >
+                {rune}
+              </div>
             ))}
           </div>
           <div className="lp-sigil-ring r2" />

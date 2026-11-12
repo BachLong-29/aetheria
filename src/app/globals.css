@@ -3221,18 +3221,25 @@ body {
     color-mix(in oklab, var(--bg-0) 40%, transparent)
   );
 }
-.lp-sigil-tick {
+/* A rune standing in the band between the outer dashed ring (radius 180) and the solid ring inside
+   it (radius 144), foot towards the centre: centred at radius 162. */
+.lp-sigil-rune {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 2px;
-  height: 12px;
-  background: var(--gold);
-  transform-origin: center 168px;
-  margin-left: -1px;
-  margin-top: -168px;
-  opacity: 0.6;
-  box-shadow: 0 0 6px var(--gold-glow);
+  width: 20px;
+  height: 20px;
+  margin-left: -10px;
+  margin-top: -172px;
+  transform-origin: center 172px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gold);
+  font-size: 16px;
+  line-height: 1;
+  opacity: 0.8;
+  text-shadow: 0 0 6px var(--gold-glow);
 }
 .lp-sigil-core {
   position: relative;
@@ -4879,9 +4886,13 @@ body {
   .lp-sigil-ring.r4 {
     inset: 67px;
   }
-  .lp-sigil-tick {
-    transform-origin: center 103px;
-    margin-top: -103px;
+  .lp-sigil-rune {
+    width: 16px;
+    height: 16px;
+    margin-left: -8px;
+    margin-top: -107px;
+    transform-origin: center 107px;
+    font-size: 10px;
   }
   .lp-sigil-core {
     width: 86px;
