@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Modal, ModalBody, ModalFoot, ModalHead } from '@/components/ui/Modal';
 import { NoData } from '@/components/ui/NoData';
+import { InputSearch } from '@/components/ui/InputSearch';
 import { SkelBlock } from '@/components/ui/Skeleton';
 import { Switch } from '@/components/ui/Switch';
 import DashboardTopbar from '@/features/dashboard/components/layout/DashboardTopbar';
@@ -23,6 +24,7 @@ import type { EventDTO } from '@/types';
 
 import { DAY_ORDER } from '../constants';
 import { useDeleteEvent, useEventOccurrences, useEvents, useUpdateEvent } from '../hooks/useEvents';
+import { filterEvents } from '../utils/filter';
 import { isEventLive, LIVE_TICK_MS } from '../utils/live';
 import { EventFormModal } from './EventFormModal';
 
@@ -77,6 +79,7 @@ export function EventsPage() {
   const [editing, setEditing] = useState<EventDTO | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [deleting, setDeleting] = useState<EventDTO | null>(null);
+  const [query, setQuery] = useState('');
 
   const categoryName = useMemo(() => new Map(categories.map((c) => [c.id, c.name])), [categories]);
 
@@ -114,14 +117,14 @@ export function EventsPage() {
       const lastDay = event.recurrence ? event.endDate : (event.endDate ?? event.startDate);
       return Boolean(lastDay) && (lastDay as string).slice(0, 10) < today ? 1 : 0;
     };
-    return [...events].sort(
+    return filterEvents(events, query).sort(
       (a, b) =>
         tier(a) - tier(b) ||
         Number(liveIds.has(b.id)) - Number(liveIds.has(a.id)) ||
         Number(Boolean(b.recurrence)) - Number(Boolean(a.recurrence)) ||
         a.startDate.localeCompare(b.startDate),
     );
-  }, [events, liveIds, today]);
+  }, [events, query, liveIds, today]);
 
   function openCreate() {
     setEditing(null);
@@ -180,7 +183,28 @@ export function EventsPage() {
           />
         )}
 
-        {!isLoading && !isError && sorted.length === 0 && (
+        {!isLoading && !isError && events.length > 0 && (
+          <InputSearch
+            value={query}
+            onChange={setQuery}
+            placeholder={t('page.searchPlaceholder')}
+          />
+        )}
+
+        {!isLoading && !isError && events.length > 0 && sorted.length === 0 && (
+          <NoData
+            icon="⌕"
+            title={t('page.noMatchTitle')}
+            message={t('page.noMatchMessage')}
+            action={
+              <Button variant="ghost" onClick={() => setQuery('')}>
+                {t('page.clearSearch')}
+              </Button>
+            }
+          />
+        )}
+
+        {!isLoading && !isError && events.length === 0 && (
           <NoData
             icon="📅"
             title={t('page.emptyTitle')}

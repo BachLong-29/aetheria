@@ -899,6 +899,10 @@
   },
   "events": {
     "page": {
+      "searchPlaceholder": "ค้นหากิจกรรม",
+      "noMatchTitle": "ไม่พบกิจกรรมที่ตรงกัน",
+      "noMatchMessage": "ไม่มีรายการที่ตรงกัน ลองคำอื่นหรือล้างการค้นหา",
+      "clearSearch": "ล้างการค้นหา",
       "eyebrow": "ตารางเวลา",
       "title": "กิจกรรม",
       "newEvent": "＋ กิจกรรมใหม่",

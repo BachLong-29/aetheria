@@ -899,6 +899,10 @@
   },
   "events": {
     "page": {
+      "searchPlaceholder": "Tìm sự kiện",
+      "noMatchTitle": "Không có sự kiện phù hợp",
+      "noMatchMessage": "Không có gì khớp. Thử từ khác hoặc xoá ô tìm kiếm.",
+      "clearSearch": "Xoá tìm kiếm",
       "eyebrow": "LỊCH",
       "title": "Sự kiện",
       "newEvent": "＋ Sự kiện mới",

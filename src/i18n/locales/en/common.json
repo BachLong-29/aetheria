@@ -899,6 +899,10 @@
   },
   "events": {
     "page": {
+      "searchPlaceholder": "Search events",
+      "noMatchTitle": "No matching events",
+      "noMatchMessage": "Nothing matches that. Try another word or clear the search.",
+      "clearSearch": "Clear search",
       "eyebrow": "SCHEDULE",
       "title": "Events",
       "newEvent": "＋ New Event",
