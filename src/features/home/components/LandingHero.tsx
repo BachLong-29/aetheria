@@ -32,6 +32,15 @@ const embers = [
 const FUTHARK = 'ᚠᚢᚦᚨᚱᚲᚷᚹᚺᚾᛁᛃᛇᛈᛉᛊᛏᛒᛖᛗᛚᛜᛞᛟ';
 const RUNE_COUNT = 72;
 const runes = Array.from({ length: RUNE_COUNT }, (_, i) => FUTHARK[i % FUTHARK.length]);
+// A second, tighter band of writing on the inner circle, two rounds, turning the other way.
+const INNER_RUNE_COUNT = 48;
+const innerRunes = Array.from({ length: INNER_RUNE_COUNT }, (_, i) => FUTHARK[i % FUTHARK.length]);
+// And a third, tightest band around the core, turning with the outer one again.
+const CORE_RUNE_COUNT = 40;
+const coreRunes = Array.from(
+  { length: CORE_RUNE_COUNT },
+  (_, i) => FUTHARK[(i * 5) % FUTHARK.length],
+);
 
 export function LandingHero() {
   const t = useTranslations('landing.hero');
@@ -120,7 +129,29 @@ export function LandingHero() {
             ))}
           </div>
           <div className="lp-sigil-ring r2" />
+          <div className="lp-sigil-ring runes-in">
+            {innerRunes.map((rune, i) => (
+              <div
+                key={i}
+                className="lp-sigil-rune in"
+                style={{ transform: `rotate(${(i * 360) / INNER_RUNE_COUNT}deg)` }}
+              >
+                {rune}
+              </div>
+            ))}
+          </div>
           <div className="lp-sigil-ring r3" />
+          <div className="lp-sigil-ring runes-core">
+            {coreRunes.map((rune, i) => (
+              <div
+                key={i}
+                className="lp-sigil-rune core"
+                style={{ transform: `rotate(${(i * 360) / CORE_RUNE_COUNT}deg)` }}
+              >
+                {rune}
+              </div>
+            ))}
+          </div>
           <div className="lp-sigil-ring r4" />
           <HeroSigilCore />
         </div>
